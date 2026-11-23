@@ -44,7 +44,7 @@ git push -u origin main
 
 ## Atualizar o app
 
-Ao mudar algum arquivo, aumente a versão na primeira linha de `sw.js` (`fisiomais-v1` → `fisiomais-v2`) e envie de novo. O celular pega a versão nova na próxima vez que abrir o app com internet. Os atendimentos salvos não são afetados.
+Ao mudar algum arquivo, aumente a versão em `sw.js` (`fisiomais-v8` → `fisiomais-v9`) e o `?v=` de `styles.css` e `app.js` no `index.html` (`?v=8` → `?v=9`), e envie de novo. Ao abrir o app com internet, o celular baixa a versão nova e recarrega sozinho uma vez. Os atendimentos salvos não são afetados.
 
 ## Testar no computador
 
