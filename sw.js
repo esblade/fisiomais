@@ -1,7 +1,7 @@
 // Guarda os arquivos do app para abrir mesmo sem internet.
 // Ao mudar qualquer arquivo do app, aumente a versão abaixo
 // e o "?v=" de styles.css e app.js no index.html.
-const VERSION = "fisiomais-v12";
+const VERSION = "fisiomais-v13";
 const SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "./app.js",
   "./config.js",
   "./sync.js",
+  "./push.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",
@@ -62,5 +63,32 @@ self.addEventListener("fetch", e => {
         return res;
       })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match("./index.html")))
+  );
+});
+
+// ============ Notificações ============
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { corpo: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || "Fisio+", {
+    body: d.corpo || "",
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
+    tag: d.tag || undefined,
+    renotify: !!d.tag,
+    data: { url: d.url || "./#agenda" }
+  }));
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(janelas => {
+      for (const j of janelas) {
+        if (j.url.startsWith(self.registration.scope)) return j.focus().then(() => (j.navigate ? j.navigate(url) : null));
+      }
+      return clients.openWindow(url);
+    })
   );
 });

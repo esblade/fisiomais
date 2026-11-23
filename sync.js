@@ -354,7 +354,7 @@
     const t = textoStatus();
     if (!t) { el.hidden = true; return; }
     el.hidden = false; el.className = "sync-st " + t[0]; el.textContent = t[1];
-    if (state.view === "ajustes") renderConta();
+    if (state.view === "ajustes") { renderConta(); window.Avisos?.render(); }
   }
 
   function renderConta() {
@@ -456,6 +456,6 @@
   });
   setInterval(() => { if (!document.hidden) sincronizar(); }, 60000);
 
-  window.Sync = { agendar, sincronizar, renderConta, pendentes, get status() { return status; } };
+  window.Sync = { agendar, sincronizar, renderConta, pendentes, get status() { return status; }, get cliente() { return sb; }, get sessao() { return sessao; } };
   iniciar().catch(e => { console.warn(e); definir("erro"); });
 })();
