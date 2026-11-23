@@ -35,7 +35,13 @@
 
   <!-- AGENDA -->
   <section id="view-agenda" class="view">
-    <p class="eyebrow">Agenda</p>
+    <div class="agenda-top">
+      <p class="eyebrow">Agenda</p>
+      <div class="modo" role="group" aria-label="Ver por">
+        <button type="button" data-modo="dia" class="on">Dia</button>
+        <button type="button" data-modo="semana">Semana</button>
+      </div>
+    </div>
     <div class="day-head">
       <h1 id="dayTitle">Hoje</h1>
       <label class="pick-date" title="Escolher data">
@@ -53,6 +59,7 @@
     </div>
 
     <ol class="appts" id="dayList"></ol>
+    <div class="wkview" id="weekList" hidden></div>
 
     <div class="summary">
       <p class="eyebrow">Neste mês</p>
@@ -95,14 +102,12 @@
   <section id="view-ajustes" class="view" hidden>
     <p class="eyebrow">Ajustes</p>
     <h1>Seus dados</h1>
-    <p class="sub">A agenda fica guardada neste aparelho. Faça uma cópia de segurança de vez em quando e use-a para levar os dados para outro celular ou computador.</p>
+    <p class="sub">A agenda fica guardada neste aparelho, no navegador em que o app foi aberto.</p>
     <ul class="settings">
-      <li><div><h3>Baixar cópia de segurança</h3><p>Salva um arquivo .json com todos os atendimentos.</p></div><button class="btn" id="btnExport" type="button">Baixar</button></li>
-      <li><div><h3>Restaurar cópia</h3><p>Substitui a agenda deste aparelho pelo conteúdo do arquivo.</p></div><label class="btn" for="fileImport">Escolher arquivo</label><input id="fileImport" type="file" accept="application/json,.json" hidden></li>
       <li id="rowEx"><div><h3>Remover exemplos</h3><p>Apaga os atendimentos fictícios que vieram com o app.</p></div><button class="btn" id="btnEx" type="button">Remover</button></li>
       <li><div><h3>Apagar tudo</h3><p>Remove todos os atendimentos deste aparelho. Não pode ser desfeito.</p></div><button class="btn danger" id="btnZerar" type="button">Apagar</button></li>
     </ul>
-    <p class="sub" id="lastBackup"></p>
+    <p class="sub" id="totalItens"></p>
     <p class="sub">Para usar como app: no celular, abra o menu do navegador e toque em <em>Adicionar à tela inicial</em>.</p>
   </section>
 

@@ -79,6 +79,37 @@ h2 { font-family: var(--serif); font-size: 1.6rem; line-height: 1.2; }
   padding: 12px 14px; margin-bottom: 24px; font-size: .84rem; color: var(--ink-2);
 }
 
+/* Alternar Dia / Semana */
+.agenda-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modo { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; padding: 2px; background: var(--white); }
+.modo button { border: 0; background: none; border-radius: 99px; padding: 4px 14px; font-size: .78rem; color: var(--muted); cursor: pointer; }
+.modo button.on { background: var(--wine); color: #fff; font-weight: 500; }
+
+/* Visão da semana */
+.wkview { margin-top: 8px; border-top: 1px solid var(--line); }
+.wv-day { border-bottom: 1px solid var(--line); padding: 14px 0; }
+.wv-head { display: grid; grid-template-columns: 44px minmax(0,1fr) auto; align-items: baseline; gap: 10px; width: 100%; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
+.wv-num { font-family: var(--serif); font-style: italic; font-size: 1.7rem; line-height: 1; color: var(--rose); }
+.wv-name { font-family: var(--serif); font-size: 1.05rem; }
+.wv-count { font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
+.wv-day.today .wv-num { color: var(--wine); }
+.wv-day.today .wv-name { color: var(--wine); }
+.wv-day.free { padding: 10px 0; }
+.wv-day.free .wv-num { font-size: 1.3rem; color: var(--line); }
+.wv-day.free .wv-name { color: var(--muted); font-size: .95rem; }
+.wv-list { list-style: none; margin: 10px 0 0 54px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.wv-item { display: grid; grid-template-columns: 46px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; }
+.wv-item + .wv-item { border-top: 1px dashed var(--line); }
+.wv-hora { font-size: .82rem; font-variant-numeric: tabular-nums; color: var(--wine-2); font-weight: 500; }
+.wv-info { display: flex; flex-direction: column; min-width: 0; }
+.wv-pac { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wv-svc { font-size: .74rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wv-item .tag { margin: 0; }
+.wv-item.is-cancelado .wv-pac { text-decoration: line-through; color: var(--muted); }
+.wv-ok { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--sage); background: var(--sage-soft); color: var(--sage); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.wv-ok svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+@media (max-width: 380px) { .wv-list { margin-left: 0; } }
+
 /* Cabeçalho do dia */
 .day-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .pick-date { position: relative; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; flex: none; cursor: pointer; background: var(--white); }

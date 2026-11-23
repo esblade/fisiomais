@@ -63,7 +63,7 @@ const store = {
   },
   save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ v: 1, items: state.items, lastBackup: state.lastBackup || null }));
+      localStorage.setItem(KEY, JSON.stringify({ v: 1, items: state.items }));
       return true;
     } catch (e) { toast("Não foi possível salvar neste aparelho."); return false; }
   }
@@ -85,8 +85,8 @@ function exemplos() {
 const loaded = store.load();
 const state = {
   items: loaded ? loaded.items : exemplos(),
-  lastBackup: loaded?.lastBackup || null,
   sel: todayIso(),
+  modo: (() => { try { return localStorage.getItem("fisiomais:modo") === "semana" ? "semana" : "dia"; } catch (e) { return "dia"; } })(),
   view: "agenda",
   filtro: "",
   editing: null,
@@ -160,24 +160,66 @@ function apptHTML(a, { mostrarData = false } = {}) {
   </li>`;
 }
 
+const plural = (n, s) => `${n} ${s}${n === 1 ? "" : "s"}`;
+
+function weekHTML(ini) {
+  const t = todayIso();
+  let h = "";
+  for (let i = 0; i < 7; i++) {
+    const s = addDays(ini, i);
+    const its = state.items.filter(a => a.data === s).sort(byTime);
+    const n = its.filter(ativo).length;
+    const label = parse(s).toLocaleDateString("pt-BR", { weekday: "long" });
+    h += `<section class="wv-day${s === t ? " today" : ""}${its.length ? "" : " free"}">
+      <button type="button" class="wv-head" data-goday="${s}">
+        <span class="wv-num">${parse(s).getDate()}</span>
+        <span class="wv-name">${label.charAt(0).toUpperCase() + label.slice(1)}${s === t ? " · hoje" : ""}</span>
+        <span class="wv-count">${n ? plural(n, "atendimento") : "livre"}</span>
+      </button>
+      ${its.length ? `<ul class="wv-list">${its.map(a => `<li class="wv-item is-${a.status}" data-act="editar" data-id="${a.id}">
+          <span class="wv-hora">${esc(a.hora)}</span>
+          <span class="wv-info"><span class="wv-pac">${esc(a.paciente)}</span><span class="wv-svc">${esc(svcNome(a))}${a.local && a.local !== "Consultório" ? ` · ${esc(a.local)}` : ""}</span></span>
+          ${pendente(a) ? `<button type="button" class="wv-ok" data-act="confirmar" data-id="${a.id}" aria-label="Confirmar atendimento de ${esc(a.paciente)}">${ICON_CHECK}</button>` : `<span class="tag ${a.status}">${STATUS[a.status]}</span>`}
+        </li>`).join("")}</ul>` : ""}
+    </section>`;
+  }
+  return h;
+}
+
 function renderAgenda() {
   const sel = state.sel, t = todayIso();
-  $("dayTitle").textContent = sel === t ? "Hoje" : sel === addDays(t, 1) ? "Amanhã" : sel === addDays(t, -1) ? "Ontem" : fmtLongo(sel).split(",")[0];
+  const semana = state.modo === "semana";
+  document.querySelectorAll("[data-modo]").forEach(b => b.classList.toggle("on", b.dataset.modo === state.modo));
+  const d0 = parse(sel); const ini = addDays(sel, -d0.getDay()); const fim = addDays(ini, 6);
   const doDia = state.items.filter(a => a.data === sel).sort(byTime);
   const ativos = doDia.filter(ativo);
-  const dataTxt = parse(sel).toLocaleDateString("pt-BR", { weekday: sel === t || Math.abs(parse(sel) - parse(t)) <= 864e5 ? "long" : undefined, day: "numeric", month: "long", year: parse(sel).getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
-  $("daySub").textContent = dataTxt.charAt(0).toUpperCase() + dataTxt.slice(1) + (ativos.length ? ` · ${ativos.length} atendimento${ativos.length > 1 ? "s" : ""}` : "");
+  if (semana) {
+    const iniT = parse(t); const iniHoje = addDays(t, -iniT.getDay());
+    $("dayTitle").textContent = ini === iniHoje ? "Esta semana" : ini === addDays(iniHoje, 7) ? "Próxima semana" : ini === addDays(iniHoje, -7) ? "Semana passada" : "Semana";
+    const a = parse(ini), b = parse(fim);
+    const periodo = a.getMonth() === b.getMonth()
+      ? `${a.getDate()} a ${b.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}`
+      : `${a.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "")} a ${b.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "")}`;
+    const nSem = state.items.filter(x => x.data >= ini && x.data <= fim && ativo(x)).length;
+    $("daySub").textContent = `${periodo} · ${nSem ? plural(nSem, "atendimento") : "nenhum atendimento"}`;
+  } else {
+    $("dayTitle").textContent = sel === t ? "Hoje" : sel === addDays(t, 1) ? "Amanhã" : sel === addDays(t, -1) ? "Ontem" : fmtLongo(sel).split(",")[0];
+    const dataTxt = parse(sel).toLocaleDateString("pt-BR", { weekday: sel === t || Math.abs(parse(sel) - parse(t)) <= 864e5 ? "long" : undefined, day: "numeric", month: "long", year: parse(sel).getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
+    $("daySub").textContent = dataTxt.charAt(0).toUpperCase() + dataTxt.slice(1) + (ativos.length ? ` · ${plural(ativos.length, "atendimento")}` : "");
+  }
   $("pickDate").value = sel;
+  $("dayList").hidden = semana;
+  $("weekList").hidden = !semana;
+  if (semana) $("weekList").innerHTML = weekHTML(ini);
 
-  // semana (domingo a sábado)
-  const d0 = parse(sel); const ini = addDays(sel, -d0.getDay());
+  // faixa da semana (domingo a sábado)
   const count = {};
   state.items.filter(ativo).forEach(a => (count[a.data] = (count[a.data] || 0) + 1));
   const letras = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   let h = "";
   for (let i = 0; i < 7; i++) {
     const s = addDays(ini, i);
-    const cls = ["wk-day", s === t ? "today" : "", s === sel ? "sel" : "", count[s] ? "has" : ""].join(" ");
+    const cls = ["wk-day", s === t ? "today" : "", s === sel && !semana ? "sel" : "", count[s] ? "has" : ""].join(" ");
     h += `<button type="button" class="${cls}" data-day="${s}" aria-label="${fmtLongo(s)}${count[s] ? `, ${count[s]} atendimento(s)` : ""}"><span class="w">${letras[i]}</span><span class="n">${parse(s).getDate()}</span><span class="dot"></span></button>`;
   }
   $("wkDays").innerHTML = h;
@@ -234,9 +276,7 @@ function renderHistorico() {
 
 function renderAjustes() {
   $("rowEx").hidden = !state.items.some(a => a.exemplo);
-  $("lastBackup").textContent = state.lastBackup
-    ? `Última cópia baixada em ${new Date(state.lastBackup).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}. ${state.items.length} atendimentos guardados.`
-    : `Nenhuma cópia baixada ainda. ${state.items.length} atendimentos guardados neste aparelho.`;
+  $("totalItens").textContent = `${state.items.length} atendimento${state.items.length === 1 ? "" : "s"} guardado${state.items.length === 1 ? "" : "s"} neste aparelho.`;
 }
 
 /* ============ Navegação ============ */
@@ -374,30 +414,6 @@ function salvarConfirmacao(ev) {
   render();
 }
 
-/* ============ Backup ============ */
-function exportar() {
-  const blob = new Blob([JSON.stringify({ app: "fisiomais", v: 1, exportadoEm: nowIso(), items: state.items }, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url; link.download = `fisiomais-${todayIso()}.json`;
-  document.body.appendChild(link); link.click(); link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-  state.lastBackup = nowIso(); store.save(); renderAjustes();
-  toast("Cópia baixada");
-}
-function importar(file) {
-  const r = new FileReader();
-  r.onload = () => {
-    try {
-      const d = JSON.parse(r.result);
-      if (!Array.isArray(d.items)) throw new Error();
-      state.items = d.items.filter(a => a && a.id && a.data && a.hora);
-      store.save(); render(); toast(`${state.items.length} atendimentos restaurados`);
-    } catch (e) { toast("Esse arquivo não é uma cópia da agenda."); }
-  };
-  r.readAsText(file);
-}
-
 /* ============ Toast ============ */
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.hidden = false;
@@ -422,7 +438,15 @@ document.querySelectorAll(".sheet-bg").forEach(bg => bg.addEventListener("click"
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
 
 document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
-$("wkDays").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) { state.sel = b.dataset.day; renderAgenda(); } });
+function setModo(m) {
+  state.modo = m;
+  try { localStorage.setItem("fisiomais:modo", m); } catch (e) {}
+  renderAgenda();
+}
+function irParaDia(s) { state.sel = s; if (state.modo !== "dia") setModo("dia"); else renderAgenda(); }
+document.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => setModo(b.dataset.modo)));
+$("wkDays").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) irParaDia(b.dataset.day); });
+$("weekList").addEventListener("click", e => { const b = e.target.closest("[data-goday]"); if (b) irParaDia(b.dataset.goday); });
 $("wkPrev").addEventListener("click", () => { state.sel = addDays(state.sel, -7); renderAgenda(); });
 $("wkNext").addEventListener("click", () => { state.sel = addDays(state.sel, 7); renderAgenda(); });
 $("pickDate").addEventListener("change", e => { if (e.target.value) { state.sel = e.target.value; renderAgenda(); } });
@@ -456,8 +480,6 @@ document.addEventListener("click", e => {
   }
 });
 
-$("btnExport").addEventListener("click", exportar);
-$("fileImport").addEventListener("change", e => { if (e.target.files[0]) importar(e.target.files[0]); e.target.value = ""; });
 $("btnEx").addEventListener("click", () => { state.items = state.items.filter(x => !x.exemplo); store.save(); render(); toast("Exemplos removidos"); });
 $("btnZerar").addEventListener("click", e => {
   const b = e.currentTarget;

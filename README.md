@@ -4,18 +4,18 @@ App de agenda para a fisioterapeuta Maisa Maria da Silva Alves. Funciona no celu
 
 ## O que faz
 
-- **Agenda**: semana deslizável, atendimentos do dia e resumo do mês (recebido, a receber, realizados e faltas).
+- **Agenda**: ver por dia ou pela semana inteira, semana deslizável e resumo do mês (recebido, a receber, realizados e faltas).
 - **Agendar**: serviços e valores do portfólio já cadastrados, aviso de horário em conflito e preenchimento automático do WhatsApp de pacientes já atendidas.
 - **Confirmar atendimento**: marca o atendimento como realizado (ou falta), registra valor, forma de pagamento (Pix, dinheiro, cartão ou incluso no pacote) e anotações da sessão. A aba *Confirmar* lista tudo o que já passou e ainda não foi confirmado, com um contador.
 - **Histórico**: busca por paciente e filtros (próximos, realizados, a receber, faltas, cancelados).
-- **Ajustes**: baixar e restaurar cópia de segurança.
+- **Ajustes**: remover os atendimentos de exemplo ou apagar a agenda.
 
 ## Onde ficam os dados
 
 Os atendimentos ficam salvos **no próprio aparelho** (no navegador), não em um servidor. Por isso:
 
 - O link do GitHub Pages pode ser aberto por qualquer pessoa, mas ninguém vê os seus atendimentos: cada aparelho tem a sua própria agenda.
-- Se você limpar os dados do navegador ou trocar de celular, a agenda some. Use **Ajustes → Baixar cópia de segurança** de vez em quando e guarde o arquivo (no Google Drive, por exemplo). Para levar os dados para outro aparelho, use **Restaurar cópia**.
+- Se você limpar os dados do navegador, desinstalar o app ou trocar de celular, a agenda some.
 
 ## Publicar no GitHub Pages
 
