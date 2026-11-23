@@ -35,31 +35,30 @@
 
   <!-- AGENDA -->
   <section id="view-agenda" class="view">
-    <div class="agenda-top">
-      <p class="eyebrow">Agenda</p>
-      <div class="modo" role="group" aria-label="Ver por">
-        <button type="button" data-modo="dia" class="on">Dia</button>
-        <button type="button" data-modo="semana">Semana</button>
+    <p class="eyebrow">Agenda</p>
+    <div class="cal-head">
+      <h1 class="cal-title" id="calTitle">Novembro</h1>
+      <div class="cal-nav">
+        <button class="nav-arrow" id="navPrev" type="button" aria-label="Anterior">‹</button>
+        <button class="btn small" id="btnHoje" type="button">Hoje</button>
+        <button class="nav-arrow" id="navNext" type="button" aria-label="Próximo">›</button>
       </div>
     </div>
-    <div class="day-head">
-      <h1 id="dayTitle">Hoje</h1>
-      <label class="pick-date" title="Escolher data">
-        <span class="sr">Escolher data</span>
-        <input type="date" id="pickDate">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
-      </label>
-    </div>
-    <p class="sub" id="daySub"></p>
 
-    <div class="week">
-      <button class="wk-arrow" id="wkPrev" type="button" aria-label="Semana anterior">‹</button>
-      <div class="wk-days" id="wkDays"></div>
-      <button class="wk-arrow" id="wkNext" type="button" aria-label="Próxima semana">›</button>
+    <div class="modo" role="group" aria-label="Forma de ver a agenda">
+      <button type="button" data-modo="calendario" class="on">Calendário</button>
+      <button type="button" data-modo="linha">Linha do tempo</button>
     </div>
 
+    <div class="month" id="monthGrid"></div>
+    <div class="wk-days" id="wkDays" hidden></div>
+
+    <div class="day-bar">
+      <h2 id="dayTitle"></h2>
+      <p class="sub" id="daySub"></p>
+    </div>
     <ol class="appts" id="dayList"></ol>
-    <div class="wkview" id="weekList" hidden></div>
+    <div class="timeline" id="timeline" hidden></div>
 
     <div class="summary">
       <p class="eyebrow">Neste mês</p>
@@ -179,6 +178,18 @@
       <button type="submit" class="btn primary" id="btnConfOk">Confirmar</button>
     </div>
   </form>
+</div>
+
+<!-- Detalhe do atendimento (linha do tempo) -->
+<div class="sheet-bg" id="sheetDetalhe" hidden>
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <ol class="appts detalhe" id="detalheBody"></ol>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Fechar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Recibo pelo WhatsApp -->
