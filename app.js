@@ -124,6 +124,7 @@ function render() {
   if (state.view === "confirmar") renderPendentes();
   if (state.view === "historico") renderHistorico();
   if (state.view === "ajustes") renderAjustes();
+  if (state.view === "painel") renderPainel();
 }
 
 function renderBanner() {
@@ -496,6 +497,148 @@ function excluirTipo() {
   toast("Tipo excluído. Os agendamentos já feitos continuam com o nome.");
 }
 
+/* ============ Painel (semana / mês) ============ */
+const painel = { modo: "semana", ref: todayIso() };
+
+function periodo(ref, modo) {
+  if (modo === "mes") {
+    const d = parse(ref);
+    const ini = iso(new Date(d.getFullYear(), d.getMonth(), 1));
+    const fim = iso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    return { ini, fim };
+  }
+  const ini = addDays(ref, -parse(ref).getDay());
+  return { ini, fim: addDays(ini, 6) };
+}
+function anterior(p, modo) {
+  return modo === "mes" ? periodo(addDays(p.ini, -1), "mes") : { ini: addDays(p.ini, -7), fim: addDays(p.ini, -1) };
+}
+const pagoDeFato = a => a.pagamento && a.pagamento !== "Incluso no pacote";
+function metricas({ ini, fim }) {
+  const its = state.items.filter(a => a.data >= ini && a.data <= fim);
+  const conta = st => its.filter(a => a.status === st).length;
+  const realizados = conta("realizado"), faltas = conta("faltou"), cancelados = conta("cancelado");
+  const previstos = its.filter(a => a.status === "agendado" || a.status === "confirmado").length;
+  const cobravel = its.filter(a => a.status !== "cancelado" && a.status !== "faltou");
+  const recebido = cobravel.filter(pagoDeFato).reduce((s, a) => s + valor(a), 0);
+  // a receber = já atendido e ainda não pago; previsto = agendamentos futuros ainda não pagos
+  const abertos = cobravel.filter(a => a.status === "realizado" && !a.pagamento && valor(a) > 0);
+  const aReceber = abertos.reduce((s, a) => s + valor(a), 0);
+  const previsto = cobravel.filter(a => a.status !== "realizado" && !a.pagamento).reduce((s, a) => s + valor(a), 0);
+  const pacientes = new Set(its.filter(ativo).map(a => (a.paciente || "").trim().toLowerCase())).size;
+  const comparec = realizados + faltas ? Math.round((realizados / (realizados + faltas)) * 100) : null;
+  return { its, realizados, faltas, cancelados, previstos, recebido, aReceber, previsto, abertos, pacientes, comparec, cobravel };
+}
+
+function delta(atual, antes, fmt, rotulo) {
+  const d = atual - antes;
+  if (!antes && !atual) return "";
+  if (d === 0) return `<span class="kpi-d">igual ${rotulo}</span>`;
+  return `<span class="kpi-d ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${fmt(Math.abs(d))} ${rotulo}</span>`;
+}
+
+function barTopo(x, y, w, h, r) {
+  // retângulo com só os cantos de cima arredondados (base reta no eixo)
+  r = Math.min(r, w / 2, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+
+function graficoDias(p) {
+  const dias = [];
+  for (let s = p.ini; s <= p.fim; s = addDays(s, 1)) {
+    const its = state.items.filter(a => a.data === s);
+    dias.push({ s, feitos: its.filter(a => a.status === "realizado").length, prev: its.filter(a => a.status === "agendado" || a.status === "confirmado").length });
+  }
+  const max = Math.max(2, ...dias.map(d => d.feitos + d.prev));
+  const W = 340, H = 150, L = 22, B = 20, T = 8;
+  const band = (W - L) / dias.length, bw = Math.max(4, Math.min(28, band * (dias.length > 7 ? 0.62 : 0.5)));
+  const y = v => T + (H - T - B) * (1 - v / max);
+  const ticks = [0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i);
+  const t = todayIso();
+  let g = ticks.map(v => `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${L - 6}" y="${y(v) + 3.5}" class="ax" text-anchor="end">${v}</text>`).join("");
+  dias.forEach((d, i) => {
+    const cx = L + band * i + band / 2, x = cx - bw / 2;
+    const total = d.feitos + d.prev;
+    const mostrarRotulo = dias.length <= 7 || i === 0 || (i + 1) % 5 === 0;
+    const rot = dias.length <= 7 ? DIAS_CURTOS[parse(d.s).getDay()] : String(parse(d.s).getDate());
+    if (mostrarRotulo) g += `<text x="${cx}" y="${H - 5}" class="ax${d.s === t ? " hoje" : ""}" text-anchor="middle">${rot}</text>`;
+    if (d.feitos) {
+      const h = (H - T - B) * d.feitos / max;
+      g += d.prev ? `<rect x="${x}" y="${y(d.feitos)}" width="${bw}" height="${h}" class="s1"/>` : `<path d="${barTopo(x, y(d.feitos), bw, h, 4)}" class="s1"/>`;
+    }
+    if (d.prev) {
+      const yTop = y(total), h = (H - T - B) * d.prev / max - (d.feitos ? 2 : 0);
+      g += `<path d="${barTopo(x, yTop, bw, Math.max(h, 1), 4)}" class="s2"/>`;
+    }
+    const tip = `${fmtCurto(d.s)}|Realizados: ${d.feitos}|Agendados: ${d.prev}`;
+    g += `<rect x="${L + band * i}" y="${T}" width="${band}" height="${H - T - B}" class="hit" data-tip="${esc(tip)}" data-day="${d.s}"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Atendimentos por dia">${g}</svg>`;
+}
+
+function renderPainel() {
+  const p = periodo(painel.ref, painel.modo), ant = anterior(p, painel.modo);
+  const m = metricas(p), mAnt = metricas(ant);
+  const t = todayIso(), semana = painel.modo === "semana";
+  document.querySelectorAll("[data-pmodo]").forEach(b => b.classList.toggle("on", b.dataset.pmodo === painel.modo));
+
+  // título
+  if (semana) {
+    const iniHoje = periodo(t, "semana").ini;
+    $("pTitle").textContent = p.ini === iniHoje ? "Esta semana" : p.ini === addDays(iniHoje, -7) ? "Semana passada" : p.ini === addDays(iniHoje, 7) ? "Próxima semana" : "Semana";
+    const a = parse(p.ini), b = parse(p.fim);
+    $("pSub").textContent = a.getMonth() === b.getMonth()
+      ? `${a.getDate()} a ${b.getDate()} de ${MESES[b.getMonth()].toLowerCase()}`
+      : `${a.getDate()} de ${MESES[a.getMonth()].toLowerCase()} a ${b.getDate()} de ${MESES[b.getMonth()].toLowerCase()}`;
+  } else {
+    const d = parse(p.ini);
+    $("pTitle").innerHTML = `${MESES[d.getMonth()]}${d.getFullYear() !== new Date().getFullYear() ? ` <span>${d.getFullYear()}</span>` : ""}`;
+    const mesT = t.slice(0, 7), mesP = p.ini.slice(0, 7);
+    $("pSub").textContent = mesP === mesT ? "Mês atual" : mesP < mesT ? "Mês encerrado" : "Mês futuro";
+  }
+  const rot = semana ? "vs semana anterior" : "vs mês anterior";
+  const n = v => String(v);
+
+  $("pKpis").innerHTML = `
+    <div class="kpi"><span class="bar"></span><h3>Realizados</h3><p class="kpi-v">${m.realizados}</p>
+      <p class="kpi-s">${m.previstos ? `+ ${plural(m.previstos, "agendado")}` : "nenhum agendado pela frente"}</p>${delta(m.realizados, mAnt.realizados, n, rot)}</div>
+    <div class="kpi"><span class="bar"></span><h3>Recebido</h3><p class="kpi-v money">${brl(m.recebido)}</p>
+      <p class="kpi-s">${m.cobravel.filter(pagoDeFato).length ? plural(m.cobravel.filter(pagoDeFato).length, "pagamento") : "nenhum pagamento"}</p>${delta(m.recebido, mAnt.recebido, brl, rot)}</div>
+    <div class="kpi"><span class="bar"></span><h3>A receber</h3><p class="kpi-v money${m.aReceber ? " open" : ""}">${brl(m.aReceber)}</p>
+      <p class="kpi-s">${m.abertos.length ? plural(m.abertos.length, "atendimento") + " sem pagamento" : "nada pendente"}</p>
+      ${m.previsto ? `<span class="kpi-d">+ ${brl(m.previsto)} previsto nos agendamentos</span>` : ""}</div>
+    <div class="kpi"><span class="bar"></span><h3>Comparecimento</h3><p class="kpi-v">${m.comparec === null ? "—" : m.comparec + "%"}</p>
+      <p class="kpi-s">${plural(m.faltas, "falta")} · ${plural(m.pacientes, "paciente")}</p></div>`;
+
+  $("pDias").innerHTML = graficoDias(p);
+
+  // presença
+  const tot = m.realizados + m.faltas + m.cancelados + m.previstos;
+  const seg = [["realizado", "Realizados", m.realizados], ["previsto", "Agendados", m.previstos], ["faltou", "Faltas", m.faltas], ["cancelado", "Cancelados", m.cancelados]].filter(s => s[2]);
+  $("pPresNote").textContent = tot ? plural(tot, "agendamento") : "";
+  $("pPresenca").innerHTML = tot
+    ? `<div class="seg-bar">${seg.map(s => `<span class="sg ${s[0]}" style="flex:${s[2]}" data-tip="${s[1]}|${s[2]} de ${tot} (${Math.round(s[2] / tot * 100)}%)"></span>`).join("")}</div>
+       <ul class="seg-legend">${seg.map(s => `<li><i class="sg ${s[0]}"></i>${s[1]} <b>${s[2]}</b></li>`).join("")}</ul>`
+    : `<p class="p-empty">Nenhum atendimento neste período.</p>`;
+
+  // faturamento por tipo
+  const porTipo = {};
+  m.cobravel.forEach(a => { const k = svcNome(a); porTipo[k] = (porTipo[k] || 0) + valor(a); });
+  let tipos = Object.entries(porTipo).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
+  if (tipos.length > 6) { const resto = tipos.slice(5).reduce((s, e) => s + e[1], 0); tipos = [...tipos.slice(0, 5), ["Outros", resto]]; }
+  const maxT = Math.max(...tipos.map(e => e[1]), 1);
+  $("pTipos").innerHTML = tipos.length
+    ? `<ul class="hbars">${tipos.map(([nome, v]) => `<li data-tip="${esc(nome)}|${brl(v)}"><span class="hb-l">${esc(nome)}</span><span class="hb-v">${brl(v)}</span><span class="hb-track"><span class="hb-bar" style="width:${Math.max(2, v / maxT * 100)}%"></span></span></li>`).join("")}</ul>`
+    : `<p class="p-empty">Sem valores neste período.</p>`;
+
+  // a receber
+  const abertos = [...m.abertos].sort(byTime);
+  $("pRecNote").textContent = abertos.length ? brl(m.aReceber) : "";
+  $("pReceber").innerHTML = abertos.length
+    ? abertos.map(a => `<li data-act="detalhe" data-id="${a.id}"><span class="pl-d">${DIAS_CURTOS[parse(a.data).getDay()]}<b>${ddmm(a.data)}</b></span><span class="pl-n">${esc(a.paciente)}<small>${esc(svcNome(a))}</small></span><span class="price open">${brl(a.valor)}</span></li>`).join("")
+    : `<li class="p-empty">Nenhum atendimento feito sem pagamento neste período.</li>`;
+}
+
 function renderAjustes() {
   renderTipos();
   $("rowEx").hidden = !state.items.some(a => a.exemplo);
@@ -505,9 +648,9 @@ function renderAjustes() {
 /* ============ Navegação ============ */
 function setView(v) {
   state.view = v;
-  ["agenda", "confirmar", "historico", "ajustes"].forEach(n => ($("view-" + n).hidden = n !== v));
+  ["agenda", "painel", "confirmar", "historico", "ajustes"].forEach(n => ($("view-" + n).hidden = n !== v));
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.view === v));
-  $("btnNovo").hidden = v === "ajustes";
+  $("btnNovo").hidden = v === "ajustes" || v === "painel";
   if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
   window.scrollTo(0, 0);
   render();
@@ -752,6 +895,30 @@ document.addEventListener("click", e => {
   }
 });
 
+// Painel
+document.querySelectorAll("[data-pmodo]").forEach(b => b.addEventListener("click", () => { painel.modo = b.dataset.pmodo; renderPainel(); }));
+$("pPrev").addEventListener("click", () => { painel.ref = painel.modo === "mes" ? addDays(periodo(painel.ref, "mes").ini, -1) : addDays(painel.ref, -7); renderPainel(); });
+$("pNext").addEventListener("click", () => { painel.ref = painel.modo === "mes" ? addDays(periodo(painel.ref, "mes").fim, 1) : addDays(painel.ref, 7); renderPainel(); });
+$("pHoje").addEventListener("click", () => { painel.ref = todayIso(); renderPainel(); });
+$("pDias").addEventListener("click", e => { const r = e.target.closest("[data-day]"); if (r) { state.sel = r.dataset.day; state.mes = r.dataset.day.slice(0, 7); setView("agenda"); } });
+
+// Dica ao passar o dedo/mouse nos gráficos
+function mostrarDica(el, x, y) {
+  const [titulo, ...linhas] = el.dataset.tip.split("|");
+  const tip = $("tip");
+  tip.innerHTML = `<b>${esc(titulo)}</b>${linhas.map(l => `<span>${esc(l)}</span>`).join("")}`;
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x - w / 2)) + "px";
+  tip.style.top = Math.max(8, y - h - 14) + "px";
+}
+$("view-painel").addEventListener("pointermove", e => {
+  const el = e.target.closest("[data-tip]");
+  if (el) mostrarDica(el, e.clientX, e.clientY); else $("tip").hidden = true;
+});
+$("view-painel").addEventListener("pointerleave", () => ($("tip").hidden = true));
+window.addEventListener("scroll", () => ($("tip").hidden = true), { passive: true });
+
 $("btnNovoTipo").addEventListener("click", () => openTipo(null));
 $("tiposList").addEventListener("click", e => { const b = e.target.closest("[data-tipo]"); if (b) openTipo(SVC[b.dataset.tipo]); });
 $("formTipo").addEventListener("submit", salvarTipo);
@@ -769,7 +936,7 @@ setInterval(renderBadge, 60000);
 
 // Inicialização
 const inicial = (location.hash || "").slice(1);
-setView(["agenda", "confirmar", "historico", "ajustes"].includes(inicial) ? inicial : "agenda");
+setView(["agenda", "painel", "confirmar", "historico", "ajustes"].includes(inicial) ? inicial : "agenda");
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
