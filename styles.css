@@ -479,3 +479,31 @@ button.menu-i:hover { background: var(--surface-2); }
 .sync-st.off { background: var(--line-2); color: var(--muted); }
 .sync-st.err { background: var(--bad-soft); color: var(--bad); }
 @keyframes pulsa { 50% { opacity: .3; } }
+
+/* Tela de PIN / Face ID */
+body.travado { overflow: hidden; }
+.lock {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow-y: auto;
+  background: radial-gradient(120% 70% at 50% 0%, #f8e6ed 0%, var(--bg) 60%);
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 24px) max(16px, env(safe-area-inset-left, 0px));
+}
+.lock-in { width: min(100%, 340px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+.lock-av { width: 72px; height: 72px; font-size: 2.2rem; margin-bottom: 4px; }
+.lock-app { font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--brand-2); }
+.lock h2 { font-size: 1.35rem; }
+.lock .sub { max-width: 280px; }
+.pin-dots { display: flex; gap: 14px; margin: 20px 0 4px; }
+.pin-dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand-2); transition: background .12s, transform .12s; }
+.pin-dots i.on { background: var(--brand-grad); border-color: transparent; transform: scale(1.1); }
+.pin-dots.treme { animation: treme .4s; }
+@keyframes treme { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.lock-erro { min-height: 1.3em; font-size: .8rem; font-weight: 500; color: var(--bad); }
+.keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px 22px; margin-top: 10px; }
+.keypad button, .k-vazio { width: 72px; height: 72px; border-radius: 50%; }
+.keypad button { border: 0; background: var(--surface); box-shadow: var(--shadow); font-size: 1.6rem; font-weight: 500; color: var(--ink); cursor: pointer; display: grid; place-items: center; font-variant-numeric: tabular-nums; transition: transform .08s, background .12s; }
+.keypad button:active { transform: scale(.92); background: var(--brand-soft); }
+.keypad .k-apagar, .keypad .k-bio { background: none; box-shadow: none; color: var(--brand); }
+.keypad svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.keypad .k-bio svg { width: 34px; height: 34px; }
+.lock-local { margin-top: 14px; font-size: .8rem; }
+@media (max-height: 640px) { .keypad { grid-template-columns: repeat(3, 62px); gap: 10px 18px; } .keypad button, .k-vazio { width: 62px; height: 62px; } .lock-av { display: none; } }

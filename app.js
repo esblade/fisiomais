@@ -740,7 +740,7 @@ function openDetalhe(a) {
   openSheet("sheetDetalhe");
 }
 function closeSheets() {
-  ["sheetForm", "sheetConf", "sheetRecibo", "sheetDetalhe", "sheetTipo"].forEach(id => ($(id).hidden = true));
+  ["sheetForm", "sheetConf", "sheetRecibo", "sheetDetalhe", "sheetTipo", "sheetBio"].forEach(id => ($(id).hidden = true));
   document.body.style.overflow = "";
   state.editing = null; state.confirming = null; state.recibo = null; state.tipo = null;
 }

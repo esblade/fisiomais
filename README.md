@@ -10,7 +10,7 @@ App de agenda para a fisioterapeuta Maisa Maria da Silva Alves. Funciona no celu
 - **Recibo pelo WhatsApp**: ao confirmar, o app prepara uma mensagem para a paciente com o serviço, o número da sessão (ex.: 3 de 4), a data, o pagamento e as datas de todas as sessões já feitas no pacote. Assim fica registrado na conversa quantas sessões ela fez. Dá para reenviar pelo botão *Enviar recibo* no atendimento.
 - **Painel**: resumo da semana ou do mês, com setas para ver períodos anteriores: realizados, recebido, a receber (atendido e não pago) e comparecimento, cada um comparado ao período anterior; gráfico de atendimentos por dia (toque no dia para abrir na agenda), presença, faturamento por tipo de atendimento e a lista de quem foi atendido e ainda não pagou.
 - **Histórico**: busca por paciente e filtros (próximos, realizados, a receber, faltas, cancelados).
-- **Ajustes**: menu com o perfil, conta e sincronização (entrar, sincronizar agora, sair), *Tipos de atendimento* (tela própria com filtro por grupo para criar, editar e excluir tipos com valor, duração e local padrão), atendimentos guardados, remover exemplos e apagar a agenda.
+- **Ajustes**: menu com o perfil, conta e sincronização (sincronizar agora, Face ID / digital, bloquear, sair), *Tipos de atendimento* (tela própria com filtro por grupo para criar, editar e excluir tipos com valor, duração e local padrão), atendimentos guardados, remover exemplos e apagar a agenda.
 
 ## Onde ficam os dados
 
@@ -26,9 +26,9 @@ O app salva tudo **no aparelho** e, com login, **sincroniza com o Supabase**:
 
 1. No Supabase, abra **SQL Editor**, cole o conteúdo de [`supabase/fisiomais.sql`](supabase/fisiomais.sql) e rode. Ele cria as tabelas `atendimentos` e `servicos` no schema `fisiomais` com as regras de acesso. Se o seu schema tiver outro nome, troque `fisiomais` no arquivo e em `config.js`.
 2. Em **Project Settings → Data API → Exposed schemas**, adicione o schema (`fisiomais`) e salve. Sem isso a API não enxerga as tabelas.
-3. Em **Authentication → Users → Add user**, crie o usuário da Maisa (e-mail e senha, marcando *Auto Confirm User*). Se ninguém mais deve criar conta, desligue *Allow new users to sign up* em **Authentication → Sign In / Providers**.
+3. Em **Authentication → Users → Add user**, crie o usuário do app com o e-mail que está em `contaEmail` no [`config.js`](config.js) (`maisa@fisiomais.app`) e, como senha, o **PIN de 6 dígitos**. Marque *Auto Confirm User*. O e-mail não precisa existir e não aparece no app. Desligue *Allow new users to sign up* em **Authentication → Sign In / Providers**.
 4. Em **Project Settings → API**, copie a **Project URL** e a chave **anon / publishable** e coloque em [`config.js`](config.js). Essa chave é pública e pode ficar no site; quem protege os dados é o login e as regras do passo 1. **Nunca** coloque a chave `service_role` / `secret` no app.
-5. Publique. Ao abrir o app, ele pede e-mail e senha; os atendimentos que já estavam no aparelho sobem para o banco.
+5. Publique. No primeiro acesso de cada aparelho o app pede o PIN e conecta ao banco; os atendimentos que já estavam no aparelho sobem. Depois disso ele abre com Face ID / digital (se ativar) ou com o PIN, conferido no próprio aparelho, e bloqueia de novo depois de 5 minutos fora do app. Para trocar o PIN, mude a senha do usuário no Supabase; no próximo desbloqueio com o PIN novo, o app atualiza sozinho.
 
 ## Publicar no GitHub Pages
 

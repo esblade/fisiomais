@@ -175,32 +175,147 @@
     renderStatus();
   }
 
-  /* ---------- Conta ---------- */
-  async function entrar(ev) {
-    ev.preventDefault();
-    const email = $("l-email").value.trim(), senha = $("l-senha").value;
-    const erro = $("loginErro");
-    if (!email || !senha) { erro.textContent = "Informe e-mail e senha."; erro.hidden = false; return; }
-    if (!navigator.onLine) { erro.textContent = "Sem internet. Para entrar pela primeira vez é preciso estar conectada."; erro.hidden = false; return; }
-    const btn = $("btnEntrar"); btn.disabled = true; btn.textContent = "Entrando…"; erro.hidden = true;
-    const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
-    btn.disabled = false; btn.textContent = "Entrar";
-    if (error) {
-      erro.textContent = /Invalid login/i.test(error.message) ? "E-mail ou senha incorretos." : /Email not confirmed/i.test(error.message) ? "Confirme o e-mail antes de entrar." : error.message;
-      erro.hidden = false; return;
-    }
-    sessao = data.session; meta.semConta = false; salvarMeta();
-    $("l-senha").value = "";
-    $("sheetLogin").hidden = true; document.body.style.overflow = "";
-    toast("Conectado. Sincronizando…");
-    sincronizar();
+  /* ---------- Acesso por PIN e biometria ----------
+     Primeiro acesso no aparelho: o PIN é a senha da conta no Supabase (e-mail fixo em config.js).
+     Depois, o app abre com biometria (WebAuthn: Face ID / digital) ou com o PIN conferido no
+     próprio aparelho (guardado só como hash). A sessão do banco continua salva entre aberturas. */
+  const KEY_PIN = "fisiomais:pin", KEY_BIO = "fisiomais:bio";
+  const PIN_LEN = 6, BLOQUEIO_MIN = 5;
+  const ehIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const nomeBio = ehIOS ? "Face ID" : /Android/.test(navigator.userAgent) ? "digital" : "biometria";
+  let modoLock = null, pinDigitado = "", tentativas = 0, travadoAte = 0, verificando = false, escondidoEm = 0;
+
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const deB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const aleatorio = n => crypto.getRandomValues(new Uint8Array(n));
+  function lerJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+
+  async function hashPin(pin, sal) {
+    const chave = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: sal, iterations: 150000 }, chave, 256);
+    return b64(bits);
+  }
+  async function guardarPin(pin) {
+    const sal = aleatorio(16);
+    try { localStorage.setItem(KEY_PIN, JSON.stringify({ sal: b64(sal), hash: await hashPin(pin, sal) })); } catch (e) {}
+  }
+  async function confereLocal(pin) {
+    const g = lerJSON(KEY_PIN);
+    return !!g && (await hashPin(pin, deB64(g.sal))) === g.hash;
+  }
+  const temBio = () => !!localStorage.getItem(KEY_BIO);
+  async function bioDisponivel() {
+    try { return !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }
+    catch (e) { return false; }
   }
 
-  function pedirLogin() {
-    $("loginErro").hidden = true;
-    $("sheetLogin").hidden = false; document.body.style.overflow = "hidden";
-    setTimeout(() => $("l-email").focus(), 60);
+  function mostrarLock(modo) {
+    modoLock = modo; pinDigitado = ""; renderPin(); erroLock("");
+    const login = modo === "login";
+    $("lockTitulo").textContent = login ? "Digite seu PIN" : "Fisio+ bloqueado";
+    $("lockSub").textContent = login
+      ? "Primeiro acesso neste aparelho. O PIN conecta à sua agenda salva no banco."
+      : (temBio() ? `Use o ${nomeBio} ou digite o PIN.` : "Digite o PIN para abrir.");
+    $("semConta").hidden = !login;
+    const bio = !login && temBio();
+    $("lockBio").hidden = !bio; $("lockBioVazio").hidden = bio;
+    $("lockBio").setAttribute("aria-label", `Entrar com ${nomeBio}`);
+    $("lock").hidden = false; document.body.classList.add("travado");
+    // no Android dá para pedir a digital na hora; no iPhone o Face ID exige um toque no botão
+    if (bio && !ehIOS) setTimeout(entrarComBio, 250);
   }
+  function esconderLock() { $("lock").hidden = true; document.body.classList.remove("travado"); modoLock = null; pinDigitado = ""; }
+  function renderPin() {
+    $("pinDots").innerHTML = Array.from({ length: PIN_LEN }, (_, i) => `<i class="${i < pinDigitado.length ? "on" : ""}"></i>`).join("");
+  }
+  function erroLock(msg) { $("lockErro").textContent = msg; }
+  function errou(msg) {
+    tentativas++;
+    const dots = $("pinDots"); dots.classList.remove("treme"); void dots.offsetWidth; dots.classList.add("treme");
+    if (navigator.vibrate) navigator.vibrate(120);
+    pinDigitado = ""; renderPin();
+    if (tentativas >= 5) { travadoAte = Date.now() + 30000 * Math.pow(2, tentativas - 5); tentativas = 4; }
+    erroLock(msg || "PIN incorreto.");
+  }
+
+  async function teclou(k) {
+    if (verificando) return;
+    if (Date.now() < travadoAte) { erroLock(`Muitas tentativas. Aguarde ${Math.ceil((travadoAte - Date.now()) / 1000)} s.`); return; }
+    if (k === "apagar") { pinDigitado = pinDigitado.slice(0, -1); renderPin(); return; }
+    if (pinDigitado.length >= PIN_LEN) return;
+    pinDigitado += k; renderPin(); erroLock("");
+    if (pinDigitado.length === PIN_LEN) { const pin = pinDigitado; setTimeout(() => verificarPin(pin), 120); }
+  }
+
+  async function loginServidor(pin) {
+    if (!cfg.contaEmail) return { error: { message: "Configure contaEmail em config.js." } };
+    return sb.auth.signInWithPassword({ email: cfg.contaEmail, password: pin });
+  }
+
+  async function verificarPin(pin) {
+    verificando = true;
+    try {
+      if (modoLock === "desbloqueio") {
+        if (await confereLocal(pin)) return desbloqueado();
+        // o PIN pode ter sido trocado no banco: confere lá, se houver internet
+        if (navigator.onLine && sb) {
+          const { error } = await loginServidor(pin);
+          if (!error) { await guardarPin(pin); return desbloqueado(); }
+        }
+        return errou();
+      }
+      // primeiro acesso: o PIN é a senha da conta
+      if (!navigator.onLine) return errou("Sem internet. No primeiro acesso é preciso estar conectada.");
+      erroLock("Conectando…");
+      const { data, error } = await loginServidor(pin);
+      if (error) return errou(/Invalid login/i.test(error.message) ? "PIN incorreto." : error.message);
+      sessao = data.session; meta.semConta = false; salvarMeta();
+      await guardarPin(pin);
+      desbloqueado();
+      toast("Conectada. Sincronizando…");
+      sincronizar();
+      if (!temBio() && await bioDisponivel()) oferecerBio();
+    } finally { verificando = false; }
+  }
+  function desbloqueado() { tentativas = 0; esconderLock(); renderConta(); }
+
+  async function entrarComBio() {
+    if (!temBio()) return;
+    try {
+      await navigator.credentials.get({ publicKey: {
+        challenge: aleatorio(32), timeout: 60000, userVerification: "required",
+        allowCredentials: [{ type: "public-key", id: deB64(localStorage.getItem(KEY_BIO)) }]
+      } });
+      desbloqueado();
+    } catch (e) {
+      erroLock(e?.name === "NotAllowedError" ? "" : `Não foi possível usar o ${nomeBio}. Digite o PIN.`);
+    }
+  }
+  async function ativarBio() {
+    try {
+      const cred = await navigator.credentials.create({ publicKey: {
+        challenge: aleatorio(32), timeout: 60000,
+        rp: { name: "Fisio+", id: location.hostname },
+        user: { id: aleatorio(16), name: "maisa", displayName: "Maisa · Fisio+" },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
+        attestation: "none"
+      } });
+      localStorage.setItem(KEY_BIO, b64(cred.rawId));
+      toast(`${nomeBio[0].toUpperCase() + nomeBio.slice(1)} ativado`);
+    } catch (e) {
+      if (e?.name !== "NotAllowedError") toast(`Não foi possível ativar o ${nomeBio}.`);
+    }
+    $("sheetBio").hidden = true; document.body.style.overflow = "";
+    renderConta();
+  }
+  function oferecerBio() {
+    $("bioTitulo").textContent = `Usar ${nomeBio === "digital" ? "a digital" : "o " + nomeBio} para abrir o Fisio+?`;
+    $("sheetBio").hidden = false; document.body.style.overflow = "hidden";
+  }
+
+  function pedirLogin() { mostrarLock("login"); }
+  function bloquear() { if (sessao) mostrarLock("desbloqueio"); }
 
   let sairArmado = false;
   async function sair() {
@@ -214,7 +329,7 @@
       return;
     }
     try { await sb.auth.signOut(); } catch (e) {}
-    try { ["fisiomais:v1", "fisiomais:servicos", KEY_META].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    try { ["fisiomais:v1", "fisiomais:servicos", KEY_META, KEY_PIN, KEY_BIO].forEach(k => localStorage.removeItem(k)); } catch (e) {}
     location.reload();
   }
 
@@ -246,6 +361,14 @@
     const tit = $("contaTitulo"), sub = $("contaSub"), acao = $("contaAcao");
     if (!tit) return;
     $("contaSairLi").hidden = !sessao;
+    $("bloquearLi").hidden = !sessao;
+    // linha de biometria: aparece só com conta conectada e aparelho compatível
+    bioDisponivel().then(ok => {
+      $("bioLi").hidden = !(sessao && ok);
+      $("bioNome").textContent = nomeBio === "digital" ? "Entrar com a digital" : `Entrar com ${nomeBio}`;
+      $("bioSub").textContent = temBio() ? "Ativado neste aparelho" : "Desativado · o app abre só com PIN";
+      $("bioAcao").textContent = temBio() ? "Desativar" : "Ativar";
+    });
     $("apagarSub").textContent = sessao ? "Apaga também no banco, em todos os aparelhos" : "Não pode ser desfeito";
     $("dadosNota").textContent = sessao
       ? "A agenda fica no aparelho e no banco. Sem internet, as alterações ficam guardadas e são enviadas quando a conexão voltar."
@@ -260,7 +383,7 @@
       sub.textContent = "A agenda está só neste aparelho";
       acao.hidden = false; acao.textContent = "Entrar"; acao.dataset.a = "entrar"; return;
     }
-    tit.textContent = sessao.user.email || "Conectada";
+    tit.textContent = "Agenda no banco";
     const n = pendentes().total;
     sub.textContent = status === "erro" ? erroMsg
       : status === "offline" ? (n ? `Sem internet · ${n} alteraç${n === 1 ? "ão" : "ões"} para enviar` : "Sem internet · tudo salvo no aparelho")
@@ -272,10 +395,24 @@
 
   /* ---------- Início ---------- */
   async function iniciar() {
-    $("formLogin").addEventListener("submit", entrar);
+    $("keypad").addEventListener("click", e => {
+      const b = e.target.closest("[data-k]"); if (b) teclou(b.dataset.k);
+    });
+    document.addEventListener("keydown", e => {
+      if (!modoLock) return;
+      if (/^[0-9]$/.test(e.key)) teclou(e.key);
+      else if (e.key === "Backspace") teclou("apagar");
+    });
+    $("lockBio").addEventListener("click", entrarComBio);
+    $("btnAtivarBio").addEventListener("click", ativarBio);
+    $("bioAcao").addEventListener("click", () => {
+      if (temBio()) { localStorage.removeItem(KEY_BIO); toast(`${nomeBio[0].toUpperCase() + nomeBio.slice(1)} desativado`); renderConta(); }
+      else oferecerBio();
+    });
+    $("btnBloquear").addEventListener("click", bloquear);
     $("semConta").addEventListener("click", () => {
       meta.semConta = true; salvarMeta();
-      $("sheetLogin").hidden = true; document.body.style.overflow = "";
+      esconderLock();
       definir("sem-conta");
     });
     $("syncSt").addEventListener("click", () => {
@@ -305,12 +442,18 @@
       if (!meta.semConta) pedirLogin();
       return;
     }
+    bloquear(); // já conectada: abre pedindo biometria ou PIN
     sincronizar();
   }
 
   window.addEventListener("online", () => agendar(300));
   window.addEventListener("offline", () => { if (sessao) definir("offline"); });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) agendar(300); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { escondidoEm = Date.now(); return; }
+    // voltou depois de alguns minutos fora: bloqueia de novo
+    if (sessao && !modoLock && escondidoEm && Date.now() - escondidoEm > BLOQUEIO_MIN * 60000) bloquear();
+    agendar(300);
+  });
   setInterval(() => { if (!document.hidden) sincronizar(); }, 60000);
 
   window.Sync = { agendar, sincronizar, renderConta, pendentes, get status() { return status; } };

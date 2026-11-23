@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=11">
+<link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
 <div class="app">
@@ -168,6 +168,16 @@
         <span class="menu-txt"><b id="contaTitulo">Sincronização</b><small id="contaSub"></small></span>
         <button class="btn small" id="contaAcao" type="button" hidden></button>
       </div></li>
+      <li id="bioLi" hidden><div class="menu-i">
+        <span class="menu-ic g1"><svg viewBox="0 0 24 24"><path d="M7 3.5H5.5a2 2 0 0 0-2 2V7M17 3.5h1.5a2 2 0 0 1 2 2V7M7 20.5H5.5a2 2 0 0 1-2-2V17M17 20.5h1.5a2 2 0 0 0 2-2V17M9 9v1.5M15 9v1.5M12 9v4.5h-1M9.5 16.5a3.5 3.5 0 0 0 5 0"/></svg></span>
+        <span class="menu-txt"><b id="bioNome">Face ID</b><small id="bioSub"></small></span>
+        <button class="btn small" id="bioAcao" type="button"></button>
+      </div></li>
+      <li id="bloquearLi" hidden><div class="menu-i">
+        <span class="menu-ic"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></span>
+        <span class="menu-txt"><b>Bloquear agora</b><small>Pede PIN ou biometria para abrir de novo</small></span>
+        <button class="btn small" id="btnBloquear" type="button">Bloquear</button>
+      </div></li>
       <li id="contaSairLi" hidden><div class="menu-i">
         <span class="menu-ic"><svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 16l-4-4 4-4M5 12h11"/></svg></span>
         <span class="menu-txt"><b>Sair da conta</b><small>Apaga a cópia deste aparelho; os dados continuam no banco</small></span>
@@ -307,25 +317,47 @@
   </form>
 </div>
 
-<!-- Entrar (sincronização) -->
-<div class="sheet-bg" id="sheetLogin" hidden>
-  <form class="sheet" id="formLogin" novalidate>
-    <div class="sheet-grip"></div>
-    <p class="eyebrow">Sincronização</p>
-    <h2>Entrar no Fisio+</h2>
-    <p class="sub">Com a conta, a agenda fica salva no banco e aparece igual no celular e no computador. Sem internet, continua funcionando e envia as alterações depois.</p>
-    <div class="fields">
-      <div class="field full"><label for="l-email">E-mail</label><input id="l-email" type="email" autocomplete="username" inputmode="email" required></div>
-      <div class="field full"><label for="l-senha">Senha</label><input id="l-senha" type="password" autocomplete="current-password" required></div>
+<!-- Acesso por PIN / Face ID -->
+<div class="lock" id="lock" hidden>
+  <div class="lock-in">
+    <span class="avatar lock-av">M</span>
+    <p class="lock-app">Fisio+</p>
+    <h2 id="lockTitulo">Digite seu PIN</h2>
+    <p class="sub" id="lockSub"></p>
+    <div class="pin-dots" id="pinDots" aria-live="polite"></div>
+    <p class="lock-erro" id="lockErro" role="alert"></p>
+    <div class="keypad" id="keypad">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" class="k-bio" id="lockBio" aria-label="Entrar com biometria" hidden>
+        <svg viewBox="0 0 24 24"><path d="M7 3.5H5.5a2 2 0 0 0-2 2V7M17 3.5h1.5a2 2 0 0 1 2 2V7M7 20.5H5.5a2 2 0 0 1-2-2V17M17 20.5h1.5a2 2 0 0 0 2-2V17M9 9v1.5M15 9v1.5M12 9v4.5h-1M9.5 16.5a3.5 3.5 0 0 0 5 0"/></svg>
+      </button>
+      <span class="k-vazio" id="lockBioVazio"></span>
+      <button type="button" data-k="0">0</button>
+      <button type="button" class="k-apagar" data-k="apagar" aria-label="Apagar">
+        <svg viewBox="0 0 24 24"><path d="M9 5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 19 19H9l-6-7z"/><path d="m12 9.5 5 5M17 9.5l-5 5"/></svg>
+      </button>
     </div>
-    <p class="warn" id="loginErro" hidden></p>
-    <div class="sheet-actions">
-      <button type="button" class="btn ghost" id="semConta">Usar só neste aparelho</button>
-      <span class="spacer"></span>
-      <button type="submit" class="btn primary" id="btnEntrar">Entrar</button>
-    </div>
-  </form>
+    <button type="button" class="btn ghost lock-local" id="semConta" hidden>Usar só neste aparelho, sem sincronizar</button>
+  </div>
 </div>
+
+<!-- Oferta de Face ID -->
+<div class="sheet-bg" id="sheetBio" hidden>
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <p class="eyebrow">Acesso rápido</p>
+    <h2 id="bioTitulo">Usar Face ID para abrir o Fisio+?</h2>
+    <p class="sub">Na próxima vez, o app abre com o seu rosto (ou digital). O PIN continua funcionando se preferir.</p>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Agora não</button>
+      <button type="button" class="btn primary" id="btnAtivarBio">Ativar</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- Detalhe do atendimento (linha do tempo) -->
 <div class="sheet-bg" id="sheetDetalhe" hidden>
@@ -363,8 +395,8 @@
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js?v=11"></script>
-<script src="app.js?v=11"></script>
-<script src="sync.js?v=11"></script>
+<script src="config.js?v=12"></script>
+<script src="app.js?v=12"></script>
+<script src="sync.js?v=12"></script>
 </body>
 </html>
