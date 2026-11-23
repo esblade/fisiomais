@@ -86,7 +86,8 @@ const loaded = store.load();
 const state = {
   items: loaded ? loaded.items : exemplos(),
   sel: todayIso(),
-  modo: (() => { try { return localStorage.getItem("fisiomais:modo") === "semana" ? "semana" : "dia"; } catch (e) { return "dia"; } })(),
+  mes: todayIso().slice(0, 7),
+  modo: (() => { try { return localStorage.getItem("fisiomais:modo") === "linha" ? "linha" : "calendario"; } catch (e) { return "calendario"; } })(),
   view: "agenda",
   filtro: "",
   editing: null,
@@ -251,71 +252,126 @@ function apptHTML(a, { mostrarData = false } = {}) {
 
 const plural = (n, s) => `${n} ${s}${n === 1 ? "" : "s"}`;
 
-function weekHTML(ini) {
-  const t = todayIso();
-  let h = "";
-  for (let i = 0; i < 7; i++) {
-    const s = addDays(ini, i);
-    const its = state.items.filter(a => a.data === s).sort(byTime);
-    const n = its.filter(ativo).length;
-    const label = parse(s).toLocaleDateString("pt-BR", { weekday: "long" });
-    h += `<section class="wv-day${s === t ? " today" : ""}${its.length ? "" : " free"}">
-      <button type="button" class="wv-head" data-goday="${s}">
-        <span class="wv-num">${parse(s).getDate()}</span>
-        <span class="wv-name">${label.charAt(0).toUpperCase() + label.slice(1)}${s === t ? " · hoje" : ""}</span>
-        <span class="wv-count">${n ? plural(n, "atendimento") : "livre"}</span>
-      </button>
-      ${its.length ? `<ul class="wv-list">${its.map(a => `<li class="wv-item is-${a.status}" data-act="editar" data-id="${a.id}">
-          <span class="wv-hora">${esc(a.hora)}</span>
-          <span class="wv-info"><span class="wv-pac">${esc(a.paciente)}</span><span class="wv-svc">${esc(svcNome(a))}${a.local && a.local !== "Consultório" ? ` · ${esc(a.local)}` : ""}</span></span>
-          ${pendente(a) ? `<button type="button" class="wv-ok" data-act="confirmar" data-id="${a.id}" aria-label="Confirmar atendimento de ${esc(a.paciente)}">${ICON_CHECK}</button>` : `<span class="tag ${a.status}">${STATUS[a.status]}</span>`}
-        </li>`).join("")}</ul>` : ""}
-    </section>`;
+const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const LETRAS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const DIAS_CURTOS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function contagemPorDia() {
+  const c = {};
+  state.items.forEach(a => {
+    if (!ativo(a)) return;
+    const d = (c[a.data] ||= { n: 0, pend: 0 });
+    d.n++;
+    if (pendente(a)) d.pend++;
+  });
+  return c;
+}
+
+function monthHTML() {
+  const [y, m] = state.mes.split("-").map(Number);
+  const first = new Date(y, m - 1, 1);
+  const start = new Date(y, m - 1, 1 - first.getDay());
+  const semanas = Math.ceil((first.getDay() + new Date(y, m, 0).getDate()) / 7);
+  const t = todayIso(), c = contagemPorDia();
+  let h = LETRAS.map(l => `<span class="m-wd">${l}</span>`).join("");
+  for (let i = 0; i < semanas * 7; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const s = iso(d), info = c[s];
+    const cls = ["m-day", d.getMonth() !== m - 1 ? "out" : "", s === t ? "today" : "", s === state.sel ? "sel" : "", info ? "has" : ""].join(" ");
+    const dots = info ? `<span class="m-dots">${"<i></i>".repeat(Math.min(info.n, 3))}${info.n > 3 ? "<b>+</b>" : ""}</span>` : `<span class="m-dots"></span>`;
+    h += `<button type="button" class="${cls}" data-day="${s}" aria-label="${fmtLongo(s)}${info ? `, ${plural(info.n, "atendimento")}` : ""}"><span class="m-n">${d.getDate()}</span>${dots}${info?.pend ? '<span class="m-pend" title="A confirmar"></span>' : ""}</button>`;
   }
   return h;
 }
 
-function renderAgenda() {
-  const sel = state.sel, t = todayIso();
-  const semana = state.modo === "semana";
-  document.querySelectorAll("[data-modo]").forEach(b => b.classList.toggle("on", b.dataset.modo === state.modo));
-  const d0 = parse(sel); const ini = addDays(sel, -d0.getDay()); const fim = addDays(ini, 6);
-  const doDia = state.items.filter(a => a.data === sel).sort(byTime);
-  const ativos = doDia.filter(ativo);
-  if (semana) {
-    const iniT = parse(t); const iniHoje = addDays(t, -iniT.getDay());
-    $("dayTitle").textContent = ini === iniHoje ? "Esta semana" : ini === addDays(iniHoje, 7) ? "Próxima semana" : ini === addDays(iniHoje, -7) ? "Semana passada" : "Semana";
-    const a = parse(ini), b = parse(fim);
-    const periodo = a.getMonth() === b.getMonth()
-      ? `${a.getDate()} a ${b.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}`
-      : `${a.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "")} a ${b.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "")}`;
-    const nSem = state.items.filter(x => x.data >= ini && x.data <= fim && ativo(x)).length;
-    $("daySub").textContent = `${periodo} · ${nSem ? plural(nSem, "atendimento") : "nenhum atendimento"}`;
-  } else {
-    $("dayTitle").textContent = sel === t ? "Hoje" : sel === addDays(t, 1) ? "Amanhã" : sel === addDays(t, -1) ? "Ontem" : fmtLongo(sel).split(",")[0];
-    const dataTxt = parse(sel).toLocaleDateString("pt-BR", { weekday: sel === t || Math.abs(parse(sel) - parse(t)) <= 864e5 ? "long" : undefined, day: "numeric", month: "long", year: parse(sel).getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
-    $("daySub").textContent = dataTxt.charAt(0).toUpperCase() + dataTxt.slice(1) + (ativos.length ? ` · ${plural(ativos.length, "atendimento")}` : "");
-  }
-  $("pickDate").value = sel;
-  $("dayList").hidden = semana;
-  $("weekList").hidden = !semana;
-  if (semana) $("weekList").innerHTML = weekHTML(ini);
-
-  // faixa da semana (domingo a sábado)
-  const count = {};
-  state.items.filter(ativo).forEach(a => (count[a.data] = (count[a.data] || 0) + 1));
-  const letras = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+function weekStripHTML() {
+  const t = todayIso(), c = contagemPorDia();
+  const ini = addDays(state.sel, -parse(state.sel).getDay());
   let h = "";
   for (let i = 0; i < 7; i++) {
     const s = addDays(ini, i);
-    const cls = ["wk-day", s === t ? "today" : "", s === sel && !semana ? "sel" : "", count[s] ? "has" : ""].join(" ");
-    h += `<button type="button" class="${cls}" data-day="${s}" aria-label="${fmtLongo(s)}${count[s] ? `, ${count[s]} atendimento(s)` : ""}"><span class="w">${letras[i]}</span><span class="n">${parse(s).getDate()}</span><span class="dot"></span></button>`;
+    const cls = ["wk-day", s === t ? "today" : "", s === state.sel ? "sel" : "", c[s] ? "has" : ""].join(" ");
+    h += `<button type="button" class="${cls}" data-day="${s}" aria-label="${fmtLongo(s)}${c[s] ? `, ${plural(c[s].n, "atendimento")}` : ""}"><span class="w">${DIAS_CURTOS[i]}</span><span class="n">${parse(s).getDate()}</span><span class="dot"></span></button>`;
   }
-  $("wkDays").innerHTML = h;
+  return h;
+}
 
-  $("dayList").innerHTML = doDia.length
-    ? doDia.map(a => apptHTML(a)).join("")
-    : `<li class="empty"><h3>Nenhum atendimento neste dia</h3><p>Toque em <em>Agendar</em> para marcar uma paciente.</p></li>`;
+const HORA_PX = 64;
+function timelineHTML(doDia) {
+  const its = doDia.map(a => ({ a, ini: toMin(a.hora), fim: toMin(a.hora) + Math.min(+a.duracao || 60, 240) }));
+  let h0 = 7, h1 = 20;
+  its.forEach(x => { h0 = Math.min(h0, Math.floor(x.ini / 60)); h1 = Math.max(h1, Math.ceil(x.fim / 60)); });
+  h1 = Math.min(h1, 24);
+  const px = min => ((min - h0 * 60) / 60) * HORA_PX;
+
+  // colunas para atendimentos no mesmo horário
+  its.sort((p, q) => p.ini - q.ini || q.fim - p.fim);
+  let grupo = [], fimGrupo = -1;
+  const fecha = () => { const n = Math.max(...grupo.map(g => g.col)) + 1; grupo.forEach(g => (g.cols = n)); grupo = []; };
+  its.forEach(x => {
+    if (grupo.length && x.ini >= fimGrupo) fecha();
+    const usadas = grupo.filter(g => g.fim > x.ini).map(g => g.col);
+    let col = 0; while (usadas.includes(col)) col++;
+    x.col = col; grupo.push(x); fimGrupo = Math.max(fimGrupo, x.fim);
+  });
+  if (grupo.length) fecha();
+
+  let h = `<div class="tl" style="height:${(h1 - h0) * HORA_PX}px">`;
+  for (let hr = h0; hr < h1; hr++) {
+    h += `<div class="tl-row" style="top:${px(hr * 60)}px"><span class="tl-label">${pad(hr)}h</span></div>`;
+    for (const mm of [0, 30]) h += `<button type="button" class="tl-slot" data-slot="${pad(hr)}:${pad(mm)}" style="top:${px(hr * 60 + mm)}px" aria-label="Agendar às ${pad(hr)}:${pad(mm)}"></button>`;
+  }
+  if (state.sel === todayIso()) {
+    const agora = toMin(nowHM());
+    if (agora >= h0 * 60 && agora <= h1 * 60) h += `<div class="tl-now" style="top:${px(agora)}px"></div>`;
+  }
+  its.forEach(({ a, ini, fim, col, cols }) => {
+    const alto = Math.max(px(fim) - px(ini), 40);
+    const curto = alto < 58;
+    h += `<button type="button" class="tl-ev is-${a.status}${curto ? " curto" : ""}" data-act="detalhe" data-id="${a.id}"
+      style="top:${px(ini) + 1}px;height:${alto - 2}px;left:calc(var(--tl-gutter) + (100% - var(--tl-gutter)) * ${col} / ${cols});width:calc((100% - var(--tl-gutter)) / ${cols} - 4px)">
+      <span class="tl-name">${esc(a.paciente)}</span>
+      <span class="tl-meta">${esc(a.hora)}–${pad(Math.floor(fim / 60) % 24)}:${pad(fim % 60)} · ${esc(svcNome(a))}</span>
+      ${pendente(a) ? `<span class="tl-flag">a confirmar</span>` : a.status === "realizado" ? `<span class="tl-flag ok">${ICON_CHECK}</span>` : ""}
+    </button>`;
+  });
+  return h + `</div><p class="tl-hint">Toque num horário livre para agendar.</p>`;
+}
+
+function renderAgenda() {
+  const sel = state.sel, t = todayIso();
+  const linha = state.modo === "linha";
+  document.querySelectorAll("[data-modo]").forEach(b => b.classList.toggle("on", b.dataset.modo === state.modo));
+
+  // título: mês exibido
+  const [y, m] = (linha ? sel.slice(0, 7) : state.mes).split("-").map(Number);
+  $("calTitle").innerHTML = `${MESES[m - 1]}${y !== new Date().getFullYear() ? ` <span>${y}</span>` : ""}`;
+  $("navPrev").setAttribute("aria-label", linha ? "Semana anterior" : "Mês anterior");
+  $("navNext").setAttribute("aria-label", linha ? "Próxima semana" : "Próximo mês");
+
+  $("monthGrid").hidden = linha;
+  $("wkDays").hidden = !linha;
+  if (linha) $("wkDays").innerHTML = weekStripHTML();
+  else $("monthGrid").innerHTML = monthHTML();
+
+  // dia selecionado
+  const doDia = state.items.filter(a => a.data === sel).sort(byTime);
+  const ativos = doDia.filter(ativo);
+  const nPend = doDia.filter(pendente).length;
+  const nome = fmtLongo(sel);
+  $("dayTitle").textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+  const rel = sel === t ? "Hoje" : sel === addDays(t, 1) ? "Amanhã" : sel === addDays(t, -1) ? "Ontem" : "";
+  $("daySub").textContent = [rel, ativos.length ? plural(ativos.length, "atendimento") : "Dia livre", nPend ? `${nPend} a confirmar` : ""].filter(Boolean).join(" · ");
+
+  $("dayList").hidden = linha;
+  $("timeline").hidden = !linha;
+  if (linha) {
+    $("timeline").innerHTML = timelineHTML(doDia);
+  } else {
+    $("dayList").innerHTML = doDia.length
+      ? doDia.map(a => apptHTML(a)).join("")
+      : `<li class="empty"><h3>Nenhum atendimento neste dia</h3><p>Toque em <em>Agendar</em> para marcar uma paciente.</p></li>`;
+  }
 
   // resumo do mês do dia selecionado
   const mes = sel.slice(0, 7);
@@ -394,9 +450,13 @@ function svcChanged(setValor) {
   }
 }
 function openSheet(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
-function closeSheets() { $("sheetForm").hidden = true; $("sheetConf").hidden = true; $("sheetRecibo").hidden = true; document.body.style.overflow = ""; state.editing = null; state.confirming = null; state.recibo = null; }
+function openDetalhe(a) {
+  $("detalheBody").innerHTML = apptHTML(a, { mostrarData: true });
+  openSheet("sheetDetalhe");
+}
+function closeSheets() { $("sheetForm").hidden = true; $("sheetConf").hidden = true; $("sheetRecibo").hidden = true; $("sheetDetalhe").hidden = true; document.body.style.overflow = ""; state.editing = null; state.confirming = null; state.recibo = null; }
 
-function openForm(a) {
+function openForm(a, pre = {}) {
   state.editing = a?.id || null;
   $("formEyebrow").textContent = a ? "Editar agendamento" : "Novo agendamento";
   $("formTitle").textContent = a ? a.paciente : "Agendar atendimento";
@@ -405,7 +465,7 @@ function openForm(a) {
   $("f-local").value = a?.local || "Consultório";
   $("f-servico").value = a?.servico && SVC[a.servico] ? a.servico : "avaliacao";
   $("f-data").value = a?.data || state.sel;
-  $("f-hora").value = a?.hora || "09:00";
+  $("f-hora").value = a?.hora || pre.hora || "09:00";
   $("f-duracao").value = String(a?.duracao || 60);
   $("f-sessao").value = a?.sessao || "";
   $("f-status").value = a?.status || "agendado";
@@ -453,7 +513,7 @@ function salvarForm(ev) {
     state.items.push({ id: uid(), criadoEm: nowIso(), pagamento: "", ...dados });
   }
   if (!store.save()) return;
-  state.sel = dados.data;
+  state.sel = dados.data; state.mes = dados.data.slice(0, 7);
   closeSheets();
   toast(editando ? "Alterações salvas" : "Atendimento agendado");
   render();
@@ -535,25 +595,47 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(
 document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
 function setModo(m) {
   state.modo = m;
+  state.mes = state.sel.slice(0, 7);
   try { localStorage.setItem("fisiomais:modo", m); } catch (e) {}
   renderAgenda();
+  if (m === "linha") rolarParaAgora();
 }
-function irParaDia(s) { state.sel = s; if (state.modo !== "dia") setModo("dia"); else renderAgenda(); }
+function selecionar(s) { state.sel = s; state.mes = s.slice(0, 7); renderAgenda(); }
+function navegar(dir) {
+  if (state.modo === "linha") return selecionar(addDays(state.sel, 7 * dir));
+  const [y, m] = state.mes.split("-").map(Number);
+  const novo = iso(new Date(y, m - 1 + dir, 1)).slice(0, 7);
+  state.mes = novo;
+  state.sel = todayIso().slice(0, 7) === novo ? todayIso() : novo + "-01";
+  renderAgenda();
+}
+function rolarParaAgora() {
+  // na linha do tempo, leva a tela até o primeiro atendimento (ou 8h)
+  requestAnimationFrame(() => {
+    const alvo = document.querySelector("#timeline .tl-ev") || document.querySelector('#timeline [data-slot="08:00"]');
+    if (alvo) window.scrollTo({ top: Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 220), behavior: "smooth" });
+  });
+}
 document.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => setModo(b.dataset.modo)));
-$("wkDays").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) irParaDia(b.dataset.day); });
-$("weekList").addEventListener("click", e => { const b = e.target.closest("[data-goday]"); if (b) irParaDia(b.dataset.goday); });
-$("wkPrev").addEventListener("click", () => { state.sel = addDays(state.sel, -7); renderAgenda(); });
-$("wkNext").addEventListener("click", () => { state.sel = addDays(state.sel, 7); renderAgenda(); });
-$("pickDate").addEventListener("change", e => { if (e.target.value) { state.sel = e.target.value; renderAgenda(); } });
-$("dayTitle").addEventListener("dblclick", () => { state.sel = todayIso(); renderAgenda(); });
+$("monthGrid").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) selecionar(b.dataset.day); });
+$("wkDays").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (b) selecionar(b.dataset.day); });
+$("navPrev").addEventListener("click", () => navegar(-1));
+$("navNext").addEventListener("click", () => navegar(1));
+$("btnHoje").addEventListener("click", () => selecionar(todayIso()));
+$("timeline").addEventListener("click", e => {
+  const s = e.target.closest("[data-slot]");
+  if (s) openForm(null, { hora: s.dataset.slot });
+});
 
-// deslizar a semana com o dedo
+// deslizar com o dedo no calendário e na faixa da semana
 let tx = null;
-$("wkDays").addEventListener("touchstart", e => (tx = e.touches[0].clientX), { passive: true });
-$("wkDays").addEventListener("touchend", e => {
-  if (tx === null) return;
-  const dx = e.changedTouches[0].clientX - tx; tx = null;
-  if (Math.abs(dx) > 50) { state.sel = addDays(state.sel, dx < 0 ? 7 : -7); renderAgenda(); }
+["monthGrid", "wkDays"].forEach(id => {
+  $(id).addEventListener("touchstart", e => (tx = e.touches[0].clientX), { passive: true });
+  $(id).addEventListener("touchend", e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 50) navegar(dx < 0 ? 1 : -1);
+  });
 });
 
 $("fBusca").addEventListener("input", renderHistorico);
@@ -567,7 +649,9 @@ $("fChips").addEventListener("click", e => {
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]"); if (!el) return;
   const a = state.items.find(x => x.id === el.dataset.id);
+  if (el.closest("#sheetDetalhe")) $("sheetDetalhe").hidden = true; // troca o detalhe pela ação escolhida
   switch (el.dataset.act) {
+    case "detalhe": if (a) openDetalhe(a); break;
     case "editar": if (a) openForm(a); break;
     case "confirmar": if (a) openConfirmar(a); break;
     case "recibo": if (a) openRecibo(a); break;

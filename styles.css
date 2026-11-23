@@ -79,48 +79,75 @@ h2 { font-family: var(--serif); font-size: 1.6rem; line-height: 1.2; }
   padding: 12px 14px; margin-bottom: 24px; font-size: .84rem; color: var(--ink-2);
 }
 
-/* Alternar Dia / Semana */
-.agenda-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.modo { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; padding: 2px; background: var(--white); }
-.modo button { border: 0; background: none; border-radius: 99px; padding: 4px 14px; font-size: .78rem; color: var(--muted); cursor: pointer; }
-.modo button.on { background: var(--wine); color: #fff; font-weight: 500; }
+/* Cabeçalho do mês */
+.cal-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.cal-title span { color: var(--muted); font-style: italic; font-size: .7em; }
+.cal-nav { display: flex; align-items: center; gap: 4px; padding-bottom: 4px; }
+.nav-arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid transparent; background: none; color: var(--wine); font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 0 3px; }
+.nav-arrow:hover { border-color: var(--line); background: var(--white); }
 
-/* Visão da semana */
-.wkview { margin-top: 8px; border-top: 1px solid var(--line); }
-.wv-day { border-bottom: 1px solid var(--line); padding: 14px 0; }
-.wv-head { display: grid; grid-template-columns: 44px minmax(0,1fr) auto; align-items: baseline; gap: 10px; width: 100%; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
-.wv-num { font-family: var(--serif); font-style: italic; font-size: 1.7rem; line-height: 1; color: var(--rose); }
-.wv-name { font-family: var(--serif); font-size: 1.05rem; }
-.wv-count { font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
-.wv-day.today .wv-num { color: var(--wine); }
-.wv-day.today .wv-name { color: var(--wine); }
-.wv-day.free { padding: 10px 0; }
-.wv-day.free .wv-num { font-size: 1.3rem; color: var(--line); }
-.wv-day.free .wv-name { color: var(--muted); font-size: .95rem; }
-.wv-list { list-style: none; margin: 10px 0 0 54px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.wv-item { display: grid; grid-template-columns: 46px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 7px 0; cursor: pointer; }
-.wv-item + .wv-item { border-top: 1px dashed var(--line); }
-.wv-hora { font-size: .82rem; font-variant-numeric: tabular-nums; color: var(--wine-2); font-weight: 500; }
-.wv-info { display: flex; flex-direction: column; min-width: 0; }
-.wv-pac { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wv-svc { font-size: .74rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wv-item .tag { margin: 0; }
-.wv-item.is-cancelado .wv-pac { text-decoration: line-through; color: var(--muted); }
-.wv-ok { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--sage); background: var(--sage-soft); color: var(--sage); display: grid; place-items: center; cursor: pointer; padding: 0; }
-.wv-ok svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
-@media (max-width: 380px) { .wv-list { margin-left: 0; } }
+/* Calendário | Linha do tempo */
+.modo { display: grid; grid-template-columns: 1fr 1fr; margin: 18px 0 14px; border-bottom: 1px solid var(--line); }
+.modo button { border: 0; background: none; padding: 10px 0 9px; font-size: .84rem; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.modo button.on { color: var(--wine); border-bottom-color: var(--wine); font-weight: 500; }
 
-/* Cabeçalho do dia */
-.day-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.pick-date { position: relative; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; flex: none; cursor: pointer; background: var(--white); }
-.pick-date svg { width: 20px; height: 20px; fill: none; stroke: var(--wine); stroke-width: 1.4; stroke-linecap: round; }
-.pick-date input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.pick-date input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+/* Calendário do mês */
+.month { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); row-gap: 2px; touch-action: pan-y; }
+.m-wd { text-align: center; font-size: .64rem; letter-spacing: .16em; color: var(--muted); padding: 4px 0 8px; }
+.m-day { position: relative; background: none; border: 0; padding: 6px 0 5px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; min-width: 0; border-radius: 10px; }
+.m-n { font-family: var(--serif); font-size: 1.08rem; line-height: 1; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; font-variant-numeric: lining-nums tabular-nums; }
+.m-dots { display: flex; gap: 3px; height: 5px; align-items: center; }
+.m-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--sage); }
+.m-dots b { font-size: .6rem; line-height: 5px; color: var(--sage); font-weight: 500; }
+.m-pend { position: absolute; top: 5px; right: calc(50% - 18px); width: 7px; height: 7px; border-radius: 50%; background: var(--amber); border: 1.5px solid var(--paper); }
+.m-day.out .m-n { color: var(--line); }
+.m-day.out .m-dots i { background: var(--sage-line); }
+.m-day.today .m-n { color: var(--wine); box-shadow: inset 0 0 0 1px var(--wine-2); }
+.m-day.sel .m-n { background: var(--wine); color: #fff; box-shadow: none; }
+.m-day:hover:not(.sel) .m-n { background: var(--rose-soft); }
 
-/* Faixa da semana */
-.week { display: grid; grid-template-columns: 28px minmax(0,1fr) 28px; align-items: center; gap: 4px; margin: 22px 0 8px; }
-.wk-arrow { background: none; border: 0; color: var(--muted); font-size: 1.5rem; line-height: 1; height: 56px; cursor: pointer; padding: 0; }
-.wk-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
+/* Faixa da semana (linha do tempo) */
+.wk-days { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; touch-action: pan-y; }
+
+/* Dia escolhido */
+.day-bar { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+.day-bar h2 { font-size: 1.45rem; }
+.day-bar .sub { margin-top: 2px; }
+
+/* Linha do tempo */
+.timeline { --tl-gutter: 46px; margin-top: 16px; }
+.tl { position: relative; }
+.tl-row { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--line); }
+.tl-label { position: absolute; left: 0; top: -9px; width: 38px; font-size: .7rem; color: var(--muted); background: var(--paper); font-variant-numeric: tabular-nums; }
+.tl-slot { position: absolute; left: var(--tl-gutter); right: 0; height: 32px; background: none; border: 0; padding: 0; cursor: pointer; border-radius: 6px; }
+.tl-slot:hover, .tl-slot:focus-visible { background: var(--rose-soft); }
+.tl-slot:hover::after { content: "+ agendar"; position: absolute; left: 10px; top: 7px; font-size: .72rem; color: var(--wine-2); }
+.tl-now { position: absolute; left: calc(var(--tl-gutter) - 6px); right: 0; height: 0; border-top: 1.5px solid var(--wine); z-index: 3; pointer-events: none; }
+.tl-now::before { content: ""; position: absolute; left: 0; top: -5px; width: 9px; height: 9px; border-radius: 50%; background: var(--wine); }
+.tl-ev {
+  position: absolute; z-index: 2; text-align: left; cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column; gap: 1px; padding: 6px 10px 6px 12px;
+  background: var(--rose-soft); border: 0; border-left: 3px solid var(--wine-2); border-radius: 6px; color: var(--ink);
+}
+.tl-ev .tl-name { font-family: var(--serif); font-size: .98rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-ev .tl-meta { font-size: .72rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.tl-ev.curto { flex-direction: row; align-items: center; gap: 8px; padding-top: 2px; padding-bottom: 2px; }
+.tl-ev.curto .tl-meta { display: none; }
+.tl-ev { padding-right: 28px; }
+.tl-flag { align-self: flex-start; margin-top: 3px; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; background: var(--amber); color: #fff; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.tl-flag.ok { position: absolute; right: 7px; top: 7px; margin: 0; background: none; padding: 0; color: var(--sage); }
+.tl-flag.ok svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+.tl-ev.curto .tl-flag { margin: 0; flex: none; }
+.tl-ev.curto .tl-flag.ok { top: 50%; transform: translateY(-50%); }
+.tl-ev.is-confirmado { background: var(--sage-soft); border-left-color: var(--sage); }
+.tl-ev.is-realizado { background: var(--paper-2); border-left-color: var(--sage); }
+.tl-ev.is-realizado .tl-name { color: var(--ink-2); }
+.tl-ev.is-faltou { background: var(--amber-soft); border-left-color: var(--amber); }
+.tl-ev.is-cancelado { background: repeating-linear-gradient(135deg, var(--paper-2) 0 6px, var(--paper) 6px 12px); border-left-color: var(--line); }
+.tl-ev.is-cancelado .tl-name { text-decoration: line-through; color: var(--muted); }
+.tl-hint { margin-top: 14px; font-size: .74rem; color: var(--muted); }
+.appts.detalhe .appt { border-top: 0; padding-top: 4px; }
+.appts.detalhe .appt:last-child { border-bottom: 0; }
 .wk-day {
   background: none; border: 1px solid transparent; border-radius: 30px; padding: 7px 0 6px;
   display: flex; flex-direction: column; align-items: center; gap: 1px; cursor: pointer; min-width: 0;
