@@ -35,10 +35,10 @@ O app salva tudo **no aparelho** e, com login, **sincroniza com o Supabase**:
 
 O app recebe o **resumo do dia** (no horário escolhido) e um **aviso antes de cada atendimento**, mesmo fechado. Quem envia é a função `fisiomais-lembretes` no Supabase, chamada a cada 5 minutos.
 
-1. **Segredos**: o projeto já tem `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `CRON_SECRET` (usados por outro app). O Fisio+ usa os mesmos; **não crie nem altere** esses segredos, senão o outro app para de receber avisos.
+1. **Segredos**: o projeto já tem `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `CRON_SECRET` (usados por outro app). O Fisio+ reaproveita os três `VAPID_*`; **não crie nem altere** esses. Crie só um segredo novo, **`FISIOMAIS_CRON_SECRET`**, com o valor aleatório que está no passo a passo (ele protege a rodada automática).
 2. **Chave pública no app**: não precisa fazer nada. Com `vapidPublica` vazio no [`config.js`](config.js), o app pede a chave pública à função, que lê o segredo `VAPID_PUBLIC_KEY` (o painel do Supabase só mostra o *digest*, não o valor).
 3. **Função**: em **Edge Functions → Deploy a new function → Via Editor**, dê o nome `fisiomais-lembretes`, cole o conteúdo de [`supabase/functions/fisiomais-lembretes/index.ts`](supabase/functions/fisiomais-lembretes/index.ts) e publique. Nas configurações da função, **desligue "Verify JWT"** (ela confere o acesso sozinha).
-4. **Agendamento**: abra [`supabase/notificacoes.sql`](supabase/notificacoes.sql), troque `<CRON_SECRET>` pelo valor do `CRON_SECRET` que já existe e rode no **SQL Editor**. Isso cria as tabelas de inscrição e liga a rodada a cada 5 minutos.
+4. **Agendamento**: abra [`supabase/notificacoes.sql`](supabase/notificacoes.sql), troque `<FISIOMAIS_CRON_SECRET>` pelo mesmo valor do passo 1 e rode no **SQL Editor**. Isso cria as tabelas de inscrição e liga a rodada a cada 5 minutos.
 5. **No celular**: abra o app instalado, entre com o PIN e vá em **Ajustes → Avisos → Ativar**. Escolha o horário do resumo e a antecedência, e toque em **Testar**.
 
 No iPhone, os avisos só funcionam com o app **instalado na tela inicial** (iOS 16.4 ou mais novo). Os avisos levam até 5 minutos de diferença, por causa da rodada.

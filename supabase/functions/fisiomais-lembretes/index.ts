@@ -7,7 +7,8 @@
 //   { teste: true }  → com o token da usuária, manda um aviso de teste.
 //
 // Segredos (Edge Functions → Secrets), os mesmos já usados por outros apps do projeto:
-// VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT e CRON_SECRET.
+// VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_SUBJECT.
+// Segredo próprio do Fisio+ para o agendador: FISIOMAIS_CRON_SECRET (não mexe no CRON_SECRET do outro app).
 // SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já vêm prontos no ambiente das funções.
 // Ao publicar, desligue "Verify JWT" (a função confere o acesso por conta própria).
 
@@ -122,7 +123,8 @@ Deno.serve(async (req) => {
   }
 
   // 2) rodada do agendador
-  if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return json({ erro: "não autorizado" }, 401);
+  const segredo = Deno.env.get("FISIOMAIS_CRON_SECRET");
+  if (!segredo || req.headers.get("x-cron-secret") !== segredo) return json({ erro: "não autorizado" }, 401);
   const { data: subs, error } = await sb.from("push_inscricoes").select("*");
   if (error) return json({ erro: error.message }, 500);
   const porUsuaria = new Map<string, Inscricao[]>();
