@@ -2,7 +2,9 @@
 // Chamada a cada 5 minutos pelo pg_cron (cabeçalho x-cron-secret) para:
 //   • enviar o resumo do dia no horário escolhido;
 //   • avisar antes de cada atendimento agendado ou confirmado.
-// Também aceita um pedido do app com o token da usuária ({ teste: true }) para mandar um aviso de teste.
+// Também aceita pedidos do app:
+//   { chave: true }  → devolve a chave VAPID pública (é pública; o painel do Supabase só mostra o digest);
+//   { teste: true }  → com o token da usuária, manda um aviso de teste.
 //
 // Segredos (Edge Functions → Secrets), os mesmos já usados por outros apps do projeto:
 // VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT e CRON_SECRET.
@@ -110,6 +112,7 @@ Deno.serve(async (req) => {
   // 1) aviso de teste pedido pelo app (com o token da usuária)
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   const corpo = await req.json().catch(() => ({}));
+  if (corpo?.chave) return json({ vapidPublica: Deno.env.get("VAPID_PUBLIC_KEY") || "" });
   if (corpo?.teste) {
     const { data: u, error } = await sb.auth.getUser(token);
     if (error || !u?.user) return json({ erro: "não autorizado" }, 401);
