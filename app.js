@@ -1,31 +1,51 @@
 "use strict";
 
-/* ============ Catálogo (portfólio) ============ */
-const SERVICOS = [
-  { g: "Avaliação", items: [
-    { id: "avaliacao", nome: "Avaliação inicial", valor: null, hint: "Valor conforme o caso." },
-    { id: "retorno", nome: "Sessão de acompanhamento", valor: null, hint: "Sessão de um plano em andamento." } ] },
-  { g: "Gestação e parto", items: [
-    { id: "perinatal", nome: "Educação perinatal", valor: 600, hint: "R$ 600 pelas 4 aulas. Nas aulas seguintes do pacote, use R$ 0." },
-    { id: "prep-parto", nome: "Preparação física para o parto", valor: 320, hint: "R$ 320 por mês (4 sessões semanais). Nas sessões seguintes do mês, use R$ 0." },
-    { id: "drenagem", nome: "Drenagem linfática gestacional + escalda-pés", valor: 200 },
-    { id: "massagem", nome: "Massagem relaxante para gestante", valor: 180 } ] },
-  { g: "Pós-parto", items: [
-    { id: "amamentacao", nome: "Consulta de amamentação", valor: 300, hint: "1 aula antes do parto + 1 encontro quando o bebê nascer." },
-    { id: "pos-parto", nome: "Fisioterapia no pós-parto", valor: 350, hint: "3 sessões: na gestação, nas primeiras horas e retorno em 5 a 7 dias." },
-    { id: "pacote-pp", nome: "Pacote amamentação + pós-parto", valor: 550, hint: "2 encontros antes e 2 depois do parto." },
-    { id: "abdominal", nome: "Reabilitação abdominal no pós-parto", valor: 1100, hint: "R$ 1.100 pelas 12 sessões. Nas sessões seguintes, use R$ 0." } ] },
-  { g: "Outros atendimentos", items: [
-    { id: "parto", nome: "Acompanhamento do parto", valor: 1800 },
-    { id: "vaginismo", nome: "Tratamento para vaginismo · avaliação", valor: 180, hint: "Número de sessões definido após a avaliação." },
-    { id: "idosos-av", nome: "Domiciliar para idosos · avaliação", valor: 100 },
-    { id: "idosos-5", nome: "Domiciliar para idosos · plano de 5 sessões", valor: 580, hint: "Nas sessões seguintes do plano, use R$ 0." },
-    { id: "idosos-10", nome: "Domiciliar para idosos · plano de 10 sessões", valor: 1000, hint: "Nas sessões seguintes do plano, use R$ 0." },
-    { id: "incontinencia", nome: "Incontinência e urgência urinária", valor: null },
-    { id: "dor-pelvica", nome: "Dor pélvica", valor: null } ] }
+/* ============ Tipos de atendimento ============ */
+// Padrão inicial, tirado do portfólio. Depois a fisioterapeuta edita em Ajustes.
+const GRUPOS = ["Avaliação", "Gestação e parto", "Pós-parto", "Outros atendimentos"];
+const SERVICOS_PADRAO = [
+  { id: "avaliacao", grupo: "Avaliação", nome: "Avaliação inicial", valor: null, duracao: 60, hint: "Valor conforme o caso." },
+  { id: "retorno", grupo: "Avaliação", nome: "Sessão de acompanhamento", valor: null, duracao: 60, hint: "Sessão de um plano em andamento." },
+  { id: "perinatal", grupo: "Gestação e parto", nome: "Educação perinatal", valor: 600, duracao: 90, hint: "R$ 600 pelas 4 aulas. Nas aulas seguintes do pacote, use R$ 0." },
+  { id: "prep-parto", grupo: "Gestação e parto", nome: "Preparação física para o parto", valor: 320, duracao: 60, hint: "R$ 320 por mês (4 sessões semanais). Nas sessões seguintes do mês, use R$ 0." },
+  { id: "drenagem", grupo: "Gestação e parto", nome: "Drenagem linfática gestacional + escalda-pés", valor: 200, duracao: 60 },
+  { id: "massagem", grupo: "Gestação e parto", nome: "Massagem relaxante para gestante", valor: 180, duracao: 60 },
+  { id: "amamentacao", grupo: "Pós-parto", nome: "Consulta de amamentação", valor: 300, duracao: 60, hint: "1 aula antes do parto + 1 encontro quando o bebê nascer." },
+  { id: "pos-parto", grupo: "Pós-parto", nome: "Fisioterapia no pós-parto", valor: 350, duracao: 60, hint: "3 sessões: na gestação, nas primeiras horas e retorno em 5 a 7 dias." },
+  { id: "pacote-pp", grupo: "Pós-parto", nome: "Pacote amamentação + pós-parto", valor: 550, duracao: 60, hint: "2 encontros antes e 2 depois do parto." },
+  { id: "abdominal", grupo: "Pós-parto", nome: "Reabilitação abdominal no pós-parto", valor: 1100, duracao: 60, hint: "R$ 1.100 pelas 12 sessões. Nas sessões seguintes, use R$ 0." },
+  { id: "parto", grupo: "Outros atendimentos", nome: "Acompanhamento do parto", valor: 1800, duracao: 240, local: "Hospital / maternidade" },
+  { id: "vaginismo", grupo: "Outros atendimentos", nome: "Tratamento para vaginismo · avaliação", valor: 180, duracao: 60, hint: "Número de sessões definido após a avaliação." },
+  { id: "idosos-av", grupo: "Outros atendimentos", nome: "Domiciliar para idosos · avaliação", valor: 100, duracao: 60, local: "Domicílio" },
+  { id: "idosos-5", grupo: "Outros atendimentos", nome: "Domiciliar para idosos · plano de 5 sessões", valor: 580, duracao: 60, local: "Domicílio", hint: "Nas sessões seguintes do plano, use R$ 0." },
+  { id: "idosos-10", grupo: "Outros atendimentos", nome: "Domiciliar para idosos · plano de 10 sessões", valor: 1000, duracao: 60, local: "Domicílio", hint: "Nas sessões seguintes do plano, use R$ 0." },
+  { id: "incontinencia", grupo: "Outros atendimentos", nome: "Incontinência e urgência urinária", valor: null, duracao: 60 },
+  { id: "dor-pelvica", grupo: "Outros atendimentos", nome: "Dor pélvica", valor: null, duracao: 60 }
 ];
+const KEY_SVC = "fisiomais:servicos";
+let SERVICOS = (() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY_SVC));
+    if (Array.isArray(s) && s.length) return s;
+  } catch (e) {}
+  return SERVICOS_PADRAO.map(s => ({ ...s }));
+})();
 const SVC = {};
-SERVICOS.forEach(g => g.items.forEach(s => (SVC[s.id] = s)));
+function indexarServicos() {
+  Object.keys(SVC).forEach(k => delete SVC[k]);
+  SERVICOS.forEach(s => (SVC[s.id] = s));
+}
+function salvarServicos() {
+  indexarServicos();
+  try { localStorage.setItem(KEY_SVC, JSON.stringify(SERVICOS)); return true; }
+  catch (e) { toast("Não foi possível salvar neste aparelho."); return false; }
+}
+function gruposEmUso() {
+  return [...GRUPOS, ...SERVICOS.map(s => s.grupo).filter(g => g && !GRUPOS.includes(g))]
+    .filter((g, i, arr) => arr.indexOf(g) === i);
+}
+indexarServicos();
+const fmtDur = m => { m = +m || 60; return m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
 const STATUS = { agendado: "Agendado", confirmado: "Confirmado", realizado: "Realizado", faltou: "Faltou", cancelado: "Cancelado" };
 
 /* ============ Utilidades ============ */
@@ -419,7 +439,65 @@ function renderHistorico() {
   $("histFoot").textContent = list.length ? `${list.length} atendimento${list.length > 1 ? "s" : ""} · ${brl(soma)}` : "";
 }
 
+function renderTipos() {
+  const uso = {};
+  state.items.forEach(a => (uso[a.servico] = (uso[a.servico] || 0) + 1));
+  $("tiposList").innerHTML = gruposEmUso().map(g => {
+    const its = SERVICOS.filter(s => s.grupo === g);
+    if (!its.length) return "";
+    return `<section class="tipo-grupo"><p class="tipo-g">${esc(g)}</p><ul>${its.map(s => `
+      <li><button type="button" class="tipo" data-tipo="${esc(s.id)}">
+        <span class="tipo-nome">${esc(s.nome)}</span>
+        <span class="tipo-val">${s.valor ? brl(s.valor) : "a combinar"}</span>
+        <span class="tipo-dur">${fmtDur(s.duracao)}${s.local ? ` · ${esc(s.local)}` : ""}${uso[s.id] ? ` · ${plural(uso[s.id], "agendamento")}` : ""}</span>
+      </button></li>`).join("")}</ul></section>`;
+  }).join("");
+}
+
+function openTipo(s) {
+  state.tipo = s?.id || null;
+  $("tipoEyebrow").textContent = s ? "Editar tipo de atendimento" : "Novo tipo de atendimento";
+  $("tipoTitle").textContent = s ? s.nome : "Tipo de atendimento";
+  $("t-nome").value = s?.nome || "";
+  $("t-valor").value = s?.valor ?? "";
+  $("t-duracao").value = s?.duracao || 60;
+  $("t-grupo").innerHTML = gruposEmUso().map(g => `<option>${esc(g)}</option>`).join("");
+  $("t-grupo").value = s?.grupo || "Outros atendimentos";
+  $("t-local").value = s?.local || "";
+  $("t-hint").value = s?.hint || "";
+  const ex = $("btnExcluirTipo"); ex.hidden = !s; ex.classList.remove("armed"); ex.textContent = "Excluir";
+  openSheet("sheetTipo");
+  if (!s) setTimeout(() => $("t-nome").focus(), 60);
+}
+function salvarTipo(ev) {
+  ev.preventDefault();
+  const nome = $("t-nome").value.trim();
+  if (!nome) { $("t-nome").focus(); toast("Informe o nome do atendimento."); return; }
+  const v = $("t-valor").value;
+  const dados = {
+    nome, grupo: $("t-grupo").value,
+    valor: v === "" ? null : Math.max(0, +v),
+    duracao: Math.min(720, Math.max(15, +$("t-duracao").value || 60)),
+    local: $("t-local").value || undefined,
+    hint: $("t-hint").value.trim() || undefined
+  };
+  const novo = !state.tipo;
+  if (novo) SERVICOS.push({ id: "t-" + uid(), ...dados });
+  else Object.assign(SVC[state.tipo], dados);
+  if (!salvarServicos()) return;
+  closeSheets(); renderTipos();
+  toast(novo ? "Tipo de atendimento criado" : "Tipo de atendimento salvo");
+}
+function excluirTipo() {
+  const b = $("btnExcluirTipo");
+  if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Toque de novo para excluir"; return; }
+  SERVICOS = SERVICOS.filter(s => s.id !== state.tipo);
+  salvarServicos(); closeSheets(); renderTipos();
+  toast("Tipo excluído. Os agendamentos já feitos continuam com o nome.");
+}
+
 function renderAjustes() {
+  renderTipos();
   $("rowEx").hidden = !state.items.some(a => a.exemplo);
   $("totalItens").textContent = `${state.items.length} atendimento${state.items.length === 1 ? "" : "s"} guardado${state.items.length === 1 ? "" : "s"} neste aparelho.`;
 }
@@ -436,17 +514,25 @@ function setView(v) {
 }
 
 /* ============ Formulário ============ */
-function fillServicos() {
-  $("f-servico").innerHTML = SERVICOS.map(g => `<optgroup label="${esc(g.g)}">${g.items.map(s => `<option value="${s.id}">${esc(s.nome)}${s.valor ? ` · ${brl(s.valor)}` : ""}</option>`).join("")}</optgroup>`).join("");
+function fillServicos(extra) {
+  // extra: atendimento antigo cujo tipo foi excluído, para não perder o nome ao editar
+  let h = gruposEmUso().map(g => {
+    const its = SERVICOS.filter(s => s.grupo === g);
+    return its.length ? `<optgroup label="${esc(g)}">${its.map(s => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("")}</optgroup>` : "";
+  }).join("");
+  if (extra && !SVC[extra.servico]) h += `<optgroup label="Tipo excluído"><option value="${esc(extra.servico || "")}">${esc(extra.servicoNome || "Atendimento")}</option></optgroup>`;
+  $("f-servico").innerHTML = h;
 }
-function svcChanged(setValor) {
+function svcChanged(aplicarPadrao) {
   const s = SVC[$("f-servico").value];
-  $("svcHint").textContent = s?.hint || "";
-  $("svcHint").hidden = !s?.hint;
-  if (setValor) {
-    $("f-valor").value = s?.valor ?? "";
-    if (s?.id === "parto") $("f-duracao").value = "240";
-    if (s?.id?.startsWith("idosos")) $("f-local").value = "Domicílio";
+  const padrao = s ? [s.valor ? brl(s.valor) : "valor a combinar", fmtDur(s.duracao)].join(" · ") : "";
+  $("svcHint").textContent = s ? `Padrão: ${padrao}${s.hint ? `. ${s.hint}` : ""}` : "";
+  $("svcHint").hidden = !s;
+  if (aplicarPadrao && s) {
+    $("f-valor").value = s.valor ?? "";
+    $("f-duracao").value = String(s.duracao || 60);
+    if (s.local) $("f-local").value = s.local;
+    checkConflito();
   }
 }
 function openSheet(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
@@ -454,7 +540,11 @@ function openDetalhe(a) {
   $("detalheBody").innerHTML = apptHTML(a, { mostrarData: true });
   openSheet("sheetDetalhe");
 }
-function closeSheets() { $("sheetForm").hidden = true; $("sheetConf").hidden = true; $("sheetRecibo").hidden = true; $("sheetDetalhe").hidden = true; document.body.style.overflow = ""; state.editing = null; state.confirming = null; state.recibo = null; }
+function closeSheets() {
+  ["sheetForm", "sheetConf", "sheetRecibo", "sheetDetalhe", "sheetTipo"].forEach(id => ($(id).hidden = true));
+  document.body.style.overflow = "";
+  state.editing = null; state.confirming = null; state.recibo = null; state.tipo = null;
+}
 
 function openForm(a, pre = {}) {
   state.editing = a?.id || null;
@@ -463,7 +553,8 @@ function openForm(a, pre = {}) {
   $("f-paciente").value = a?.paciente || "";
   $("f-telefone").value = a?.telefone || "";
   $("f-local").value = a?.local || "Consultório";
-  $("f-servico").value = a?.servico && SVC[a.servico] ? a.servico : "avaliacao";
+  fillServicos(a);
+  $("f-servico").value = a ? (a.servico || "") : (SVC.avaliacao ? "avaliacao" : SERVICOS[0]?.id || "");
   $("f-data").value = a?.data || state.sel;
   $("f-hora").value = a?.hora || pre.hora || "09:00";
   $("f-duracao").value = String(a?.duracao || 60);
@@ -499,8 +590,9 @@ function salvarForm(ev) {
   const v = $("f-valor").value;
   const dados = {
     paciente, telefone: $("f-telefone").value.trim(), local: $("f-local").value,
-    servico: $("f-servico").value, servicoNome: SVC[$("f-servico").value]?.nome || "",
-    data: $("f-data").value, hora: $("f-hora").value, duracao: +$("f-duracao").value,
+    servico: $("f-servico").value,
+    servicoNome: SVC[$("f-servico").value]?.nome || $("f-servico").selectedOptions[0]?.textContent || "",
+    data: $("f-data").value, hora: $("f-hora").value, duracao: Math.min(720, Math.max(15, +$("f-duracao").value || 60)),
     sessao: $("f-sessao").value.trim(), valor: v === "" ? 0 : Math.max(0, +v),
     status: $("f-status").value, obs: $("f-obs").value.trim(), atualizadoEm: nowIso()
   };
@@ -660,6 +752,10 @@ document.addEventListener("click", e => {
   }
 });
 
+$("btnNovoTipo").addEventListener("click", () => openTipo(null));
+$("tiposList").addEventListener("click", e => { const b = e.target.closest("[data-tipo]"); if (b) openTipo(SVC[b.dataset.tipo]); });
+$("formTipo").addEventListener("submit", salvarTipo);
+$("btnExcluirTipo").addEventListener("click", excluirTipo);
 $("btnEx").addEventListener("click", () => { state.items = state.items.filter(x => !x.exemplo); store.save(); render(); toast("Exemplos removidos"); });
 $("btnZerar").addEventListener("click", e => {
   const b = e.currentTarget;
