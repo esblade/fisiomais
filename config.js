@@ -5,5 +5,8 @@
 window.FISIO_CONFIG = {
   supabaseUrl: "https://zemvlkrymvbbqikzcsqz.supabase.co",
   supabaseKey: "sb_publishable_eQqa_K8f93tQplsoK7g-fw_MGKhlL9M", // publishable (pública). Nunca coloque a secret aqui.
-  schema: "fisiomais"
+  schema: "fisiomais",
+  // Conta única do app. Crie no Supabase (Authentication → Users → Add user) um usuário
+  // com este e-mail e com o PIN de 6 dígitos como senha. O e-mail não aparece no app.
+  contaEmail: "maisa@fisiomais.app"
 };
