@@ -512,3 +512,8 @@ body.travado { overflow: hidden; }
 .av-prefs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .av-campo { display: flex; flex-direction: column; gap: 4px; font-size: .74rem; font-weight: 500; color: var(--ink-2); min-width: 0; }
 .av-campo select { width: 100%; border: 1.5px solid transparent; background: var(--surface-2); border-radius: var(--r-sm); padding: 9px 10px; font-size: 16px; }
+
+.sel-small { border: 1.5px solid transparent; background: var(--surface-2); border-radius: 99px; padding: 6px 10px; font-size: .8rem; font-weight: 500; max-width: 100px; }
+#bloquearLi .menu-i { flex-wrap: wrap; }
+.menu-ctrl { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding-left: 50px; }
+.menu-ctrl .sel-small { max-width: none; flex: 1; }

@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=15">
+<link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
 <div class="app">
@@ -175,8 +175,14 @@
       </div></li>
       <li id="bloquearLi" hidden><div class="menu-i">
         <span class="menu-ic"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></span>
-        <span class="menu-txt"><b>Bloquear agora</b><small>Pede PIN ou biometria para abrir de novo</small></span>
-        <button class="btn small" id="btnBloquear" type="button">Bloquear</button>
+        <span class="menu-txt"><b>Pedir PIN depois de</b><small>Tempo sem usar o app até bloquear</small></span>
+        <span class="menu-ctrl">
+        <select id="tempoBloqueio" class="sel-small" aria-label="Pedir PIN depois de">
+          <option value="1">1 min</option><option value="5">5 min</option><option value="15">15 min</option>
+          <option value="60">1 hora</option><option value="480">8 horas</option>
+        </select>
+        <button class="btn small" id="btnBloquear" type="button">Bloquear agora</button>
+        </span>
       </div></li>
       <li id="contaSairLi" hidden><div class="menu-i">
         <span class="menu-ic"><svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 16l-4-4 4-4M5 12h11"/></svg></span>
@@ -417,9 +423,9 @@
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js?v=15"></script>
-<script src="app.js?v=15"></script>
-<script src="sync.js?v=15"></script>
-<script src="push.js?v=15"></script>
+<script src="config.js?v=16"></script>
+<script src="app.js?v=16"></script>
+<script src="sync.js?v=16"></script>
+<script src="push.js?v=16"></script>
 </body>
 </html>

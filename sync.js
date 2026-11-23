@@ -180,7 +180,12 @@
      Depois, o app abre com biometria (WebAuthn: Face ID / digital) ou com o PIN conferido no
      próprio aparelho (guardado só como hash). A sessão do banco continua salva entre aberturas. */
   const KEY_PIN = "fisiomais:pin", KEY_BIO = "fisiomais:bio";
-  const PIN_LEN = 6, BLOQUEIO_MIN = 5;
+  const PIN_LEN = 6;
+  // Pede o PIN só depois de um tempo sem usar o app (recarregar a página não conta).
+  const KEY_USO = "fisiomais:ultimoUso", KEY_TEMPO = "fisiomais:bloqueioMin";
+  const minutosBloqueio = () => { const m = +localStorage.getItem(KEY_TEMPO); return m > 0 ? m : 5; };
+  function marcarUso() { if (!modoLock) try { localStorage.setItem(KEY_USO, String(Date.now())); } catch (e) {} }
+  function inativoHaMuito() { const u = +localStorage.getItem(KEY_USO) || 0; return Date.now() - u > minutosBloqueio() * 60000; }
   const ehIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const nomeBio = ehIOS ? "Face ID" : /Android/.test(navigator.userAgent) ? "digital" : "biometria";
   let modoLock = null, pinDigitado = "", tentativas = 0, travadoAte = 0, verificando = false, escondidoEm = 0;
@@ -277,7 +282,7 @@
       if (!temBio() && await bioDisponivel()) oferecerBio();
     } finally { verificando = false; }
   }
-  function desbloqueado() { tentativas = 0; esconderLock(); renderConta(); }
+  function desbloqueado() { tentativas = 0; esconderLock(); marcarUso(); renderConta(); }
 
   async function entrarComBio() {
     if (!temBio()) return;
@@ -315,7 +320,7 @@
   }
 
   function pedirLogin() { mostrarLock("login"); }
-  function bloquear() { if (sessao) mostrarLock("desbloqueio"); }
+  function bloquear() { if (sessao) { try { localStorage.setItem(KEY_USO, "0"); } catch (e) {} mostrarLock("desbloqueio"); } }
 
   let sairArmado = false;
   async function sair() {
@@ -329,7 +334,7 @@
       return;
     }
     try { await sb.auth.signOut(); } catch (e) {}
-    try { ["fisiomais:v1", "fisiomais:servicos", KEY_META, KEY_PIN, KEY_BIO].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    try { ["fisiomais:v1", "fisiomais:servicos", KEY_META, KEY_PIN, KEY_BIO, KEY_USO].forEach(k => localStorage.removeItem(k)); } catch (e) {}
     location.reload();
   }
 
@@ -410,6 +415,14 @@
       else oferecerBio();
     });
     $("btnBloquear").addEventListener("click", bloquear);
+    $("tempoBloqueio").value = String(minutosBloqueio());
+    $("tempoBloqueio").addEventListener("change", e => {
+      try { localStorage.setItem(KEY_TEMPO, e.target.value); } catch (err) {}
+      toast("Tempo de bloqueio salvo");
+    });
+    // uso contínuo: toques e rolagem mantêm o app desbloqueado
+    ["pointerdown", "keydown", "scroll"].forEach(ev => document.addEventListener(ev, () => { if (sessao) marcarUso(); }, { passive: true }));
+    window.addEventListener("pagehide", marcarUso);
     $("semConta").addEventListener("click", () => {
       meta.semConta = true; salvarMeta();
       esconderLock();
@@ -442,16 +455,16 @@
       if (!meta.semConta) pedirLogin();
       return;
     }
-    bloquear(); // já conectada: abre pedindo biometria ou PIN
+    if (inativoHaMuito()) bloquear(); else marcarUso(); // já conectada: só pede PIN se ficou um tempo sem usar
     sincronizar();
   }
 
   window.addEventListener("online", () => agendar(300));
   window.addEventListener("offline", () => { if (sessao) definir("offline"); });
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) { escondidoEm = Date.now(); return; }
+    if (document.hidden) { escondidoEm = Date.now(); marcarUso(); return; }
     // voltou depois de alguns minutos fora: bloqueia de novo
-    if (sessao && !modoLock && escondidoEm && Date.now() - escondidoEm > BLOQUEIO_MIN * 60000) bloquear();
+    if (sessao && !modoLock && inativoHaMuito()) bloquear();
     agendar(300);
   });
   setInterval(() => { if (!document.hidden) sincronizar(); }, 60000);
