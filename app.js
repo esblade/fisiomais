@@ -134,6 +134,93 @@ function waLink(a, tipo) {
   return `https://wa.me/${d}?text=${encodeURIComponent(msg)}`;
 }
 
+/* ============ Recibo da sessão ============ */
+const mesmaPaciente = (x, y) => (x.paciente || "").trim().toLowerCase() === (y.paciente || "").trim().toLowerCase();
+const ddmm = s => s.slice(8, 10) + "/" + s.slice(5, 7);
+const listaPt = arr => arr.length <= 1 ? arr.join("") : arr.slice(0, -1).join(", ") + " e " + arr[arr.length - 1];
+
+function sessoesDoPacote(a) {
+  // Sessões realizadas do mesmo serviço para a mesma paciente, até este atendimento
+  let feitas = state.items
+    .filter(x => x.status === "realizado" && x.servico === a.servico && mesmaPaciente(x, a) && byTime(x, a) <= 0)
+    .sort(byTime);
+  const m = String(a.sessao || "").match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+  const numero = m ? +m[1] : feitas.length;
+  const total = m ? +m[2] : null;
+  if (m) feitas = feitas.slice(-numero); // só o pacote atual
+  return { feitas, numero, total };
+}
+
+function reciboTexto(a) {
+  const nome = (a.paciente || "").replace(/\(exemplo\)/i, "").trim().split(/\s+/)[0] || "";
+  const { feitas, numero, total } = sessoesDoPacote(a);
+  const dia = parse(a.data).toLocaleDateString("pt-BR");
+  const quando = a.data === todayIso() ? "de hoje" : `do dia ${ddmm(a.data)}`;
+  let pag = "";
+  if (a.pagamento === "Incluso no pacote") pag = "Incluso no pacote";
+  else if (a.pagamento) pag = `${a.pagamento}${valor(a) ? `, ${brl(a.valor)}` : ""}`;
+  else if (valor(a)) pag = `${brl(a.valor)} (a pagar)`;
+  const linhas = [
+    `Olá, ${nome}! Aqui é a Maisa, fisioterapeuta.`,
+    ``,
+    `Recibo do atendimento ${quando}:`,
+    `• ${svcNome(a)}`,
+    numero ? `• Sessão ${numero}${total ? ` de ${total}` : ""}` : null,
+    `• ${dia} às ${a.hora}`,
+    pag ? `• Pagamento: ${pag}` : null
+  ];
+  if (feitas.length > 1) {
+    linhas.push("", `Sessões realizadas${total ? " neste pacote" : ""}: ${listaPt(feitas.map(x => ddmm(x.data)))}.`);
+  }
+  if (total && total > numero) {
+    const r = total - numero;
+    linhas.push(`${r === 1 ? "Falta 1 sessão" : `Faltam ${r} sessões`} para concluir.`);
+  } else if (total && total === numero) {
+    linhas.push(`Pacote concluído.`);
+  }
+  linhas.push("", "Obrigada pela confiança!");
+  return linhas.filter(l => l !== null).join("\n");
+}
+
+function waNumero(tel) {
+  let d = String(tel || "").replace(/\D/g, "");
+  if (!d) return null;
+  if (d.length <= 11) d = "55" + d;
+  return d;
+}
+
+function openRecibo(a, acabouDeConfirmar = false) {
+  state.recibo = a.id;
+  $("recEyebrow").textContent = acabouDeConfirmar ? "Atendimento confirmado ✓" : "Recibo da sessão";
+  $("recTitle").textContent = `Enviar recibo para ${(a.paciente || "").replace(/\s*\(exemplo\)/i, "")}?`;
+  $("recTexto").textContent = reciboTexto(a);
+  $("recTelBox").hidden = !!waNumero(a.telefone);
+  $("r-telefone").value = "";
+  atualizaLinkRecibo();
+  openSheet("sheetRecibo");
+}
+function atualizaLinkRecibo() {
+  const a = state.items.find(x => x.id === state.recibo);
+  if (!a) return;
+  const num = waNumero(a.telefone) || waNumero($("r-telefone").value);
+  const link = $("recEnviar");
+  if (num && num.length >= 12) {
+    link.href = `https://wa.me/${num}?text=${encodeURIComponent(reciboTexto(a))}`;
+    link.removeAttribute("aria-disabled");
+  } else {
+    link.href = "#";
+    link.setAttribute("aria-disabled", "true");
+  }
+}
+function reciboEnviado() {
+  const a = state.items.find(x => x.id === state.recibo);
+  if (!a) return;
+  if (!waNumero(a.telefone) && $("r-telefone").value.trim()) a.telefone = $("r-telefone").value.trim();
+  a.reciboEm = nowIso();
+  store.save();
+  setTimeout(() => { closeSheets(); render(); }, 300);
+}
+
 function apptHTML(a, { mostrarData = false } = {}) {
   const meta = [a.local, a.sessao ? `Sessão ${a.sessao}` : "", valor(a) ? `<span class="price ${a.pagamento || a.status === "cancelado" ? "" : "open"}">${brl(a.valor)}${a.pagamento ? ` · ${esc(a.pagamento)}` : a.status === "cancelado" ? "" : " · a receber"}</span>` : (a.pagamento === "Incluso no pacote" ? "Incluso no pacote" : "")]
     .filter(Boolean).map(m => `<li>${m.startsWith("<span") ? m : esc(m)}</li>`).join("");
@@ -149,11 +236,13 @@ function apptHTML(a, { mostrarData = false } = {}) {
       ${meta ? `<ul class="meta">${meta}</ul>` : ""}
       ${a.obs ? `<p class="obs">${esc(a.obs)}</p>` : ""}
       ${a.status === "realizado" ? `<p class="done">${ICON_CHECK}<span>Atendimento confirmado${quando ? ` em ${quando}` : ""}${a.evolucao ? `<span class="ev">${esc(a.evolucao)}</span>` : ""}</span></p>` : ""}
+      ${a.status === "realizado" && a.reciboEm ? `<p class="receipt">Recibo aberto no WhatsApp em ${new Date(a.reciboEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>` : ""}
       ${a.status === "faltou" ? `<p class="done" style="color:var(--amber)"><span>Falta registrada${quando ? ` em ${quando}` : ""}</span></p>` : ""}
       <div class="actions">
         ${podeConfirmar ? `<button class="btn small confirm" type="button" data-act="confirmar" data-id="${a.id}">${ICON_CHECK}Confirmar atendimento</button>` : ""}
         ${a.status === "realizado" && valor(a) && !a.pagamento ? `<button class="btn small" type="button" data-act="confirmar" data-id="${a.id}">Registrar pagamento</button>` : ""}
         ${wa ? `<a class="btn small" href="${wa}" target="_blank" rel="noopener">${ICON_WA}Lembrar pelo WhatsApp</a>` : ""}
+        ${a.status === "realizado" ? `<button class="btn small" type="button" data-act="recibo" data-id="${a.id}">${ICON_WA}${a.reciboEm ? "Reenviar recibo" : "Enviar recibo"}</button>` : ""}
         <button class="btn small ghost" type="button" data-act="editar" data-id="${a.id}">Editar</button>
       </div>
     </div>
@@ -305,7 +394,7 @@ function svcChanged(setValor) {
   }
 }
 function openSheet(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
-function closeSheets() { $("sheetForm").hidden = true; $("sheetConf").hidden = true; document.body.style.overflow = ""; state.editing = null; state.confirming = null; }
+function closeSheets() { $("sheetForm").hidden = true; $("sheetConf").hidden = true; $("sheetRecibo").hidden = true; document.body.style.overflow = ""; state.editing = null; state.confirming = null; state.recibo = null; }
 
 function openForm(a) {
   state.editing = a?.id || null;
@@ -410,8 +499,9 @@ function salvarConfirmacao(ev) {
   a.atualizadoEm = nowIso();
   if (!store.save()) return;
   closeSheets();
-  toast(st === "realizado" ? "Atendimento confirmado" : "Falta registrada");
   render();
+  if (st === "realizado") openRecibo(a, true);
+  else toast("Falta registrada");
 }
 
 /* ============ Toast ============ */
@@ -434,6 +524,11 @@ $("f-paciente").addEventListener("change", () => {
   if (p) $("f-telefone").value = p.telefone;
 });
 document.querySelectorAll('input[name="presenca"]').forEach(r => r.addEventListener("change", presencaChanged));
+$("r-telefone").addEventListener("input", atualizaLinkRecibo);
+$("recEnviar").addEventListener("click", e => {
+  if ($("recEnviar").getAttribute("aria-disabled") === "true") { e.preventDefault(); $("r-telefone").focus(); return; }
+  reciboEnviado();
+});
 document.querySelectorAll(".sheet-bg").forEach(bg => bg.addEventListener("click", e => { if (e.target === bg || e.target.closest("[data-close]")) closeSheets(); }));
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheets(); });
 
@@ -475,6 +570,7 @@ document.addEventListener("click", e => {
   switch (el.dataset.act) {
     case "editar": if (a) openForm(a); break;
     case "confirmar": if (a) openConfirmar(a); break;
+    case "recibo": if (a) openRecibo(a); break;
     case "limpar-ex":
       state.items = state.items.filter(x => !x.exemplo); store.save(); render(); toast("Exemplos removidos"); break;
   }

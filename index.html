@@ -181,6 +181,26 @@
   </form>
 </div>
 
+<!-- Recibo pelo WhatsApp -->
+<div class="sheet-bg" id="sheetRecibo" hidden>
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <p class="eyebrow" id="recEyebrow">Recibo da sessão</p>
+    <h2 id="recTitle"></h2>
+    <p class="sub">A paciente recebe este resumo no WhatsApp. Ele fica guardado na conversa de vocês, com as datas de todas as sessões feitas.</p>
+    <div class="field" id="recTelBox" hidden>
+      <label for="r-telefone">WhatsApp da paciente</label>
+      <input id="r-telefone" inputmode="tel" placeholder="(82) 90000-0000">
+    </div>
+    <pre class="recibo" id="recTexto"></pre>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Agora não</button>
+      <a class="btn primary" id="recEnviar" href="#" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="app.js"></script>
