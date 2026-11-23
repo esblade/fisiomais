@@ -37,7 +37,7 @@ function indexarServicos() {
 }
 function salvarServicos() {
   indexarServicos();
-  try { localStorage.setItem(KEY_SVC, JSON.stringify(SERVICOS)); return true; }
+  try { localStorage.setItem(KEY_SVC, JSON.stringify(SERVICOS)); window.Sync?.agendar(); return true; }
   catch (e) { toast("Não foi possível salvar neste aparelho."); return false; }
 }
 function gruposEmUso() {
@@ -101,6 +101,7 @@ const store = {
   save() {
     try {
       localStorage.setItem(KEY, JSON.stringify({ v: 1, items: state.items }));
+      window.Sync?.agendar();
       return true;
     } catch (e) { toast("Não foi possível salvar neste aparelho."); return false; }
   }
@@ -690,6 +691,7 @@ function renderPainel() {
 }
 
 function renderAjustes() {
+  window.Sync?.renderConta();
   const nGrupos = gruposEmUso().filter(g => SERVICOS.some(s => s.grupo === g)).length;
   $("tiposResumo").textContent = `${plural(SERVICOS.length, "tipo")} em ${plural(nGrupos, "grupo")}`;
   const nEx = state.items.filter(a => a.exemplo).length;

@@ -469,3 +469,13 @@ button.menu-i:hover { background: var(--surface-2); }
   .appt, .kpi, .p-card { animation: fade .25s ease-out both; }
   @keyframes fade { from { transform: translateY(6px); } }
 }
+
+/* Indicador de sincronização */
+.sync-st { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; border: 0; cursor: pointer; font-size: .7rem; font-weight: 600; padding: 3px 10px 3px 8px; border-radius: 99px; background: var(--line-2); color: var(--ink-2); }
+.sync-st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sync-st.ok { background: var(--ok-soft); color: var(--ok); }
+.sync-st.sync { background: var(--g5-soft); color: var(--g5); }
+.sync-st.sync::before { animation: pulsa 1s ease-in-out infinite; }
+.sync-st.off { background: var(--line-2); color: var(--muted); }
+.sync-st.err { background: var(--bad-soft); color: var(--bad); }
+@keyframes pulsa { 50% { opacity: .3; } }
