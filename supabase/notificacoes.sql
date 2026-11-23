@@ -1,6 +1,7 @@
 -- Fisio+ · notificações push
--- Rode no SQL Editor DEPOIS de fisiomais.sql e de publicar a função "lembretes".
--- Antes de rodar, troque <CRON_SECRET> pelo valor do arquivo .segredos-supabase.txt.
+-- Rode no SQL Editor DEPOIS de fisiomais.sql e de publicar a função "fisiomais-lembretes".
+-- Antes de rodar, troque <CRON_SECRET> pelo valor do segredo CRON_SECRET que já existe no projeto
+-- (o mesmo usado pelo outro app). Não crie um segredo novo com esse nome.
 
 -- ============ Aparelhos inscritos para receber avisos ============
 create table if not exists fisiomais.push_inscricoes (
@@ -55,7 +56,7 @@ select cron.schedule(
   '*/5 * * * *',
   $$
   select net.http_post(
-    url     := 'https://zemvlkrymvbbqikzcsqz.supabase.co/functions/v1/lembretes',
+    url     := 'https://zemvlkrymvbbqikzcsqz.supabase.co/functions/v1/fisiomais-lembretes',
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', '<CRON_SECRET>'),
     body    := '{}'::jsonb
   );

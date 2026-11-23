@@ -1,10 +1,11 @@
-// Fisio+ · função "lembretes" (Supabase Edge Function)
+// Fisio+ · função "fisiomais-lembretes" (Supabase Edge Function)
 // Chamada a cada 5 minutos pelo pg_cron (cabeçalho x-cron-secret) para:
 //   • enviar o resumo do dia no horário escolhido;
 //   • avisar antes de cada atendimento agendado ou confirmado.
 // Também aceita um pedido do app com o token da usuária ({ teste: true }) para mandar um aviso de teste.
 //
-// Segredos (Edge Functions → Secrets): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, CRON_SECRET.
+// Segredos (Edge Functions → Secrets), os mesmos já usados por outros apps do projeto:
+// VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT e CRON_SECRET.
 // SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já vêm prontos no ambiente das funções.
 // Ao publicar, desligue "Verify JWT" (a função confere o acesso por conta própria).
 
@@ -19,7 +20,7 @@ const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
   auth: { persistSession: false },
 });
 webpush.setVapidDetails(
-  "mailto:contato@fisiomais.app",
+  Deno.env.get("VAPID_SUBJECT") || "mailto:contato@fisiomais.app",
   Deno.env.get("VAPID_PUBLIC_KEY")!,
   Deno.env.get("VAPID_PRIVATE_KEY")!,
 );

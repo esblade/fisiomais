@@ -9,6 +9,7 @@ window.FISIO_CONFIG = {
   // Conta única do app. Crie no Supabase (Authentication → Users → Add user) um usuário
   // com este e-mail e com o PIN de 6 dígitos como senha. O e-mail não aparece no app.
   contaEmail: "maisa@fisiomais.app",
-  // Chave pública das notificações (VAPID). A privada fica só nos segredos do Supabase.
-  vapidPublica: "BBB9xV6mwGFVycO73BCL_kNz_teyp9VaEBXlrmdSEBqg2afmLgPXZVWsAr9g7uQR37mYUGq2gzpDISg9E1mqXsw"
+  // Chave pública das notificações: o MESMO valor do segredo VAPID_PUBLIC_KEY do Supabase
+  // (a chave pública já usada pelo outro app do projeto). Precisa ser igual, senão os avisos não chegam.
+  vapidPublica: ""
 };
