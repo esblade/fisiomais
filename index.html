@@ -100,7 +100,14 @@
   <!-- AJUSTES -->
   <section id="view-ajustes" class="view" hidden>
     <p class="eyebrow">Ajustes</p>
-    <h1>Seus dados</h1>
+    <div class="tipos-head">
+      <h1>Tipos de atendimento</h1>
+      <button class="btn small" id="btnNovoTipo" type="button">+ Novo tipo</button>
+    </div>
+    <p class="sub">Valor e duração padrão de cada atendimento. Ao agendar, eles já vêm preenchidos e podem ser alterados só para aquele atendimento.</p>
+    <div id="tiposList" class="tipos"></div>
+
+    <h2 class="sec-title">Seus dados</h2>
     <p class="sub">A agenda fica guardada neste aparelho, no navegador em que o app foi aberto.</p>
     <ul class="settings">
       <li id="rowEx"><div><h3>Remover exemplos</h3><p>Apaga os atendimentos fictícios que vieram com o app.</p></div><button class="btn" id="btnEx" type="button">Remover</button></li>
@@ -135,7 +142,7 @@
       <div class="field full"><label for="f-servico">Serviço</label><select id="f-servico"></select><span class="hint" id="svcHint"></span></div>
       <div class="field"><label for="f-data">Data</label><input id="f-data" type="date" required></div>
       <div class="field"><label for="f-hora">Horário</label><input id="f-hora" type="time" step="900" required></div>
-      <div class="field"><label for="f-duracao">Duração</label><select id="f-duracao"><option value="60">60 min</option><option value="75">75 min</option><option value="90">90 min</option><option value="120">2 horas</option><option value="240">Parto / plantão</option></select></div>
+      <div class="field"><label for="f-duracao">Duração (min)</label><input id="f-duracao" type="number" min="15" max="720" step="15" inputmode="numeric"></div>
       <div class="field"><label for="f-sessao">Sessão do pacote</label><input id="f-sessao" placeholder="ex.: 2/4"></div>
       <div class="field"><label for="f-valor">Valor (R$)</label><input id="f-valor" type="number" min="0" step="10" inputmode="decimal"></div>
       <div class="field"><label for="f-status">Situação</label><select id="f-status"><option value="agendado">Agendado</option><option value="confirmado">Paciente confirmou</option><option value="realizado">Realizado</option><option value="faltou">Faltou</option><option value="cancelado">Cancelado</option></select></div>
@@ -176,6 +183,29 @@
       <span class="spacer"></span>
       <button type="button" class="btn ghost" data-close>Cancelar</button>
       <button type="submit" class="btn primary" id="btnConfOk">Confirmar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Tipo de atendimento -->
+<div class="sheet-bg" id="sheetTipo" hidden>
+  <form class="sheet" id="formTipo" novalidate>
+    <div class="sheet-grip"></div>
+    <p class="eyebrow" id="tipoEyebrow">Novo tipo de atendimento</p>
+    <h2 id="tipoTitle">Tipo de atendimento</h2>
+    <div class="fields">
+      <div class="field full"><label for="t-nome">Nome</label><input id="t-nome" required placeholder="ex.: Pilates para gestantes"></div>
+      <div class="field"><label for="t-valor">Valor padrão (R$)</label><input id="t-valor" type="number" min="0" step="10" inputmode="decimal" placeholder="a combinar"></div>
+      <div class="field"><label for="t-duracao">Duração padrão (min)</label><input id="t-duracao" type="number" min="15" max="720" step="15" inputmode="numeric"></div>
+      <div class="field"><label for="t-grupo">Grupo</label><select id="t-grupo"></select></div>
+      <div class="field"><label for="t-local">Local padrão</label><select id="t-local"><option value="">Nenhum</option><option>Consultório</option><option>Domicílio</option><option>Hospital / maternidade</option><option>Online</option></select></div>
+      <div class="field full"><label for="t-hint">Observação ao agendar</label><textarea id="t-hint" rows="2" placeholder="ex.: Pacote de 4 sessões. Nas seguintes, use R$ 0."></textarea></div>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn danger" id="btnExcluirTipo" hidden>Excluir</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Fechar</button>
+      <button type="submit" class="btn primary">Salvar</button>
     </div>
   </form>
 </div>
