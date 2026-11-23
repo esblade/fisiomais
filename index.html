@@ -70,6 +70,49 @@
     </div>
   </section>
 
+  <!-- PAINEL -->
+  <section id="view-painel" class="view" hidden>
+    <p class="eyebrow">Painel</p>
+    <div class="cal-head">
+      <h1 class="cal-title" id="pTitle">Esta semana</h1>
+      <div class="cal-nav">
+        <button class="nav-arrow" id="pPrev" type="button" aria-label="Período anterior">‹</button>
+        <button class="btn small" id="pHoje" type="button">Hoje</button>
+        <button class="nav-arrow" id="pNext" type="button" aria-label="Próximo período">›</button>
+      </div>
+    </div>
+    <p class="sub" id="pSub"></p>
+    <div class="modo" role="group" aria-label="Período">
+      <button type="button" data-pmodo="semana" class="on">Semana</button>
+      <button type="button" data-pmodo="mes">Mês</button>
+    </div>
+
+    <div class="kpis" id="pKpis"></div>
+
+    <section class="p-card">
+      <div class="p-card-head">
+        <h3>Atendimentos por dia</h3>
+        <ul class="legend"><li><i class="sw s1"></i>Realizados</li><li><i class="sw s2"></i>Agendados</li></ul>
+      </div>
+      <div class="chart" id="pDias"></div>
+    </section>
+
+    <section class="p-card">
+      <div class="p-card-head"><h3>Presença</h3><span class="p-note" id="pPresNote"></span></div>
+      <div id="pPresenca"></div>
+    </section>
+
+    <section class="p-card">
+      <div class="p-card-head"><h3>Faturamento por tipo</h3><span class="p-note">recebido + a receber</span></div>
+      <div id="pTipos"></div>
+    </section>
+
+    <section class="p-card">
+      <div class="p-card-head"><h3>Atendidos sem pagamento</h3><span class="p-note" id="pRecNote"></span></div>
+      <ul class="p-list" id="pReceber"></ul>
+    </section>
+  </section>
+
   <!-- CONFIRMAR -->
   <section id="view-confirmar" class="view" hidden>
     <p class="eyebrow">Confirmar atendimentos</p>
@@ -125,6 +168,7 @@
 <nav class="tabbar" aria-label="Seções">
   <button type="button" class="tab on" data-view="agenda"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Agenda</button>
   <button type="button" class="tab" data-view="confirmar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.8-5"/></svg>Confirmar<b class="badge" id="badge" hidden></b></button>
+  <button type="button" class="tab" data-view="painel"><svg viewBox="0 0 24 24"><path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/></svg>Painel</button>
   <button type="button" class="tab" data-view="historico"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Histórico</button>
   <button type="button" class="tab" data-view="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6"/></svg>Ajustes</button>
 </nav>
@@ -243,6 +287,7 @@
 </div>
 
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
 
 <script src="app.js"></script>
 </body>

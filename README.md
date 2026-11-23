@@ -8,6 +8,7 @@ App de agenda para a fisioterapeuta Maisa Maria da Silva Alves. Funciona no celu
 - **Agendar**: ao escolher o tipo de atendimento, valor, duração e local já vêm preenchidos com o padrão, e podem ser alterados só para aquele atendimento. Avisa de horário em conflito e preenche o WhatsApp de pacientes já atendidas.
 - **Confirmar atendimento**: marca o atendimento como realizado (ou falta), registra valor, forma de pagamento (Pix, dinheiro, cartão ou incluso no pacote) e anotações da sessão. A aba *Confirmar* lista tudo o que já passou e ainda não foi confirmado, com um contador.
 - **Recibo pelo WhatsApp**: ao confirmar, o app prepara uma mensagem para a paciente com o serviço, o número da sessão (ex.: 3 de 4), a data, o pagamento e as datas de todas as sessões já feitas no pacote. Assim fica registrado na conversa quantas sessões ela fez. Dá para reenviar pelo botão *Enviar recibo* no atendimento.
+- **Painel**: resumo da semana ou do mês, com setas para ver períodos anteriores: realizados, recebido, a receber (atendido e não pago) e comparecimento, cada um comparado ao período anterior; gráfico de atendimentos por dia (toque no dia para abrir na agenda), presença, faturamento por tipo de atendimento e a lista de quem foi atendido e ainda não pagou.
 - **Histórico**: busca por paciente e filtros (próximos, realizados, a receber, faltas, cancelados).
 - **Ajustes**: tipos de atendimento (criar, editar e excluir, com valor, duração e local padrão; começam com os serviços do portfólio), remover os exemplos ou apagar a agenda.
 
