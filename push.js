@@ -1,6 +1,6 @@
 "use strict";
 /* ============ Notificações (Web Push) ============
-   O aparelho se inscreve para receber avisos; a função "lembretes" no Supabase
+   O aparelho se inscreve para receber avisos; a função "fisiomais-lembretes" no Supabase
    envia o resumo do dia e um aviso antes de cada atendimento, mesmo com o app fechado.
    No iPhone, só funciona com o app instalado na tela inicial (iOS 16.4 ou mais novo). */
 (function () {
@@ -20,6 +20,17 @@
     const pad = "=".repeat((4 - (b64url.length % 4)) % 4);
     return Uint8Array.from(atob((b64url + pad).replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
   }
+  // A chave pública vem de config.js ou, se vazia, da própria função (que lê o segredo VAPID_PUBLIC_KEY).
+  async function chavePublica() {
+    if (cfg.vapidPublica) return cfg.vapidPublica;
+    try { const salva = localStorage.getItem("fisiomais:vapid"); if (salva) return salva; } catch (e) {}
+    const { data, error } = await window.Sync.cliente.functions.invoke("fisiomais-lembretes", { body: { chave: true } });
+    const k = !error && data?.vapidPublica;
+    if (!k || !/^B[A-Za-z0-9_-]{80,}$/.test(k)) return null;
+    try { localStorage.setItem("fisiomais:vapid", k); } catch (e) {}
+    return k;
+  }
+
   async function inscricaoAtual() {
     if (!suportado) return null;
     const reg = await navigator.serviceWorker.getRegistration();
@@ -29,14 +40,15 @@
   async function ativar() {
     const sb = window.Sync?.cliente, sessao = window.Sync?.sessao;
     if (!sb || !sessao) { toast("Conecte com o PIN para ativar os avisos."); return; }
-    if (!cfg.vapidPublica) { toast("Falta a chave das notificações em config.js."); return; }
     ocupado = true; render();
     try {
+      const vapid = await chavePublica();
+      if (!vapid) { toast("A função fisiomais-lembretes não respondeu. Confira se foi publicada no Supabase."); return; }
       const perm = await Notification.requestPermission();
       if (perm !== "granted") { toast("Os avisos foram bloqueados. Libere nas configurações do navegador."); return; }
       const reg = await navigator.serviceWorker.ready;
       const sub = (await reg.pushManager.getSubscription())
-        || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chave(cfg.vapidPublica) }));
+        || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chave(vapid) }));
       const j = sub.toJSON(), p = lerPrefs();
       const { error } = await sb.from("push_inscricoes").upsert({
         user_id: sessao.user.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
@@ -67,12 +79,12 @@
     if (!sb) return;
     const b = $("avTeste"); b.disabled = true; b.textContent = "Enviando…";
     try {
-      const { data, error } = await sb.functions.invoke("lembretes", { body: { teste: true } });
+      const { data, error } = await sb.functions.invoke("fisiomais-lembretes", { body: { teste: true } });
       if (error) throw error;
       toast(data?.enviados ? "Aviso de teste enviado" : "Nenhum aparelho inscrito recebeu. Ative os avisos de novo.");
     } catch (e) {
       console.warn("teste push:", e);
-      toast("A função lembretes não respondeu. Confira se foi publicada no Supabase.");
+      toast("A função fisiomais-lembretes não respondeu. Confira se foi publicada no Supabase.");
     } finally { b.disabled = false; b.textContent = "Testar"; }
   }
 

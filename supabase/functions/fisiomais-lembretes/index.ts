@@ -1,10 +1,14 @@
-// Fisio+ · função "lembretes" (Supabase Edge Function)
+// Fisio+ · função "fisiomais-lembretes" (Supabase Edge Function)
 // Chamada a cada 5 minutos pelo pg_cron (cabeçalho x-cron-secret) para:
 //   • enviar o resumo do dia no horário escolhido;
 //   • avisar antes de cada atendimento agendado ou confirmado.
-// Também aceita um pedido do app com o token da usuária ({ teste: true }) para mandar um aviso de teste.
+// Também aceita pedidos do app:
+//   { chave: true }  → devolve a chave VAPID pública (é pública; o painel do Supabase só mostra o digest);
+//   { teste: true }  → com o token da usuária, manda um aviso de teste.
 //
-// Segredos (Edge Functions → Secrets): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, CRON_SECRET.
+// Segredos (Edge Functions → Secrets), os mesmos já usados por outros apps do projeto:
+// VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_SUBJECT.
+// Segredo próprio do Fisio+ para o agendador: FISIOMAIS_CRON_SECRET (não mexe no CRON_SECRET do outro app).
 // SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já vêm prontos no ambiente das funções.
 // Ao publicar, desligue "Verify JWT" (a função confere o acesso por conta própria).
 
@@ -19,7 +23,7 @@ const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
   auth: { persistSession: false },
 });
 webpush.setVapidDetails(
-  "mailto:contato@fisiomais.app",
+  Deno.env.get("VAPID_SUBJECT") || "mailto:contato@fisiomais.app",
   Deno.env.get("VAPID_PUBLIC_KEY")!,
   Deno.env.get("VAPID_PRIVATE_KEY")!,
 );
@@ -109,6 +113,7 @@ Deno.serve(async (req) => {
   // 1) aviso de teste pedido pelo app (com o token da usuária)
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   const corpo = await req.json().catch(() => ({}));
+  if (corpo?.chave) return json({ vapidPublica: Deno.env.get("VAPID_PUBLIC_KEY") || "" });
   if (corpo?.teste) {
     const { data: u, error } = await sb.auth.getUser(token);
     if (error || !u?.user) return json({ erro: "não autorizado" }, 401);
@@ -118,7 +123,8 @@ Deno.serve(async (req) => {
   }
 
   // 2) rodada do agendador
-  if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return json({ erro: "não autorizado" }, 401);
+  const segredo = Deno.env.get("FISIOMAIS_CRON_SECRET");
+  if (!segredo || req.headers.get("x-cron-secret") !== segredo) return json({ erro: "não autorizado" }, 401);
   const { data: subs, error } = await sb.from("push_inscricoes").select("*");
   if (error) return json({ erro: error.message }, 500);
   const porUsuaria = new Map<string, Inscricao[]>();
