@@ -10,6 +10,7 @@ App de agenda para a fisioterapeuta Maisa Maria da Silva Alves. Funciona no celu
 - **Recibo pelo WhatsApp**: ao confirmar, o app prepara uma mensagem para a paciente com o serviço, o número da sessão (ex.: 3 de 4), a data, o pagamento e as datas de todas as sessões já feitas no pacote. Assim fica registrado na conversa quantas sessões ela fez. Dá para reenviar pelo botão *Enviar recibo* no atendimento.
 - **Painel**: resumo da semana ou do mês, com setas para ver períodos anteriores: realizados, recebido, a receber (atendido e não pago) e comparecimento, cada um comparado ao período anterior; gráfico de atendimentos por dia (toque no dia para abrir na agenda), presença, faturamento por tipo de atendimento e a lista de quem foi atendido e ainda não pagou.
 - **Histórico**: busca por paciente e filtros (próximos, realizados, a receber, faltas, cancelados).
+- **Avisos**: resumo do dia e aviso antes de cada atendimento por notificação no celular (veja *Ligar os avisos*).
 - **Ajustes**: menu com o perfil, conta e sincronização (sincronizar agora, Face ID / digital, bloquear, sair), *Tipos de atendimento* (tela própria com filtro por grupo para criar, editar e excluir tipos com valor, duração e local padrão), atendimentos guardados, remover exemplos e apagar a agenda.
 
 ## Onde ficam os dados
@@ -29,6 +30,17 @@ O app salva tudo **no aparelho** e, com login, **sincroniza com o Supabase**:
 3. Em **Authentication → Users → Add user**, crie o usuário do app com o e-mail que está em `contaEmail` no [`config.js`](config.js) (`maisa@fisiomais.app`) e, como senha, o **PIN de 6 dígitos**. Marque *Auto Confirm User*. O e-mail não precisa existir e não aparece no app. Desligue *Allow new users to sign up* em **Authentication → Sign In / Providers**.
 4. Em **Project Settings → API**, copie a **Project URL** e a chave **anon / publishable** e coloque em [`config.js`](config.js). Essa chave é pública e pode ficar no site; quem protege os dados é o login e as regras do passo 1. **Nunca** coloque a chave `service_role` / `secret` no app.
 5. Publique. No primeiro acesso de cada aparelho o app pede o PIN e conecta ao banco; os atendimentos que já estavam no aparelho sobem. Depois disso ele abre com Face ID / digital (se ativar) ou com o PIN, conferido no próprio aparelho, e bloqueia de novo depois de 5 minutos fora do app. Para trocar o PIN, mude a senha do usuário no Supabase; no próximo desbloqueio com o PIN novo, o app atualiza sozinho.
+
+### Ligar os avisos no celular (uma vez)
+
+O app recebe o **resumo do dia** (no horário escolhido) e um **aviso antes de cada atendimento**, mesmo fechado. Quem envia é a função `lembretes` no Supabase, chamada a cada 5 minutos.
+
+1. **Segredos**: no Supabase, em **Edge Functions → Secrets**, crie `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `CRON_SECRET` com os valores do arquivo `.segredos-supabase.txt` (gerado nesta pasta, fora do Git). Depois de copiar, apague o arquivo.
+2. **Função**: em **Edge Functions → Deploy a new function → Via Editor**, dê o nome `lembretes`, cole o conteúdo de [`supabase/functions/lembretes/index.ts`](supabase/functions/lembretes/index.ts) e publique. Nas configurações da função, **desligue "Verify JWT"** (ela confere o acesso sozinha).
+3. **Agendamento**: abra [`supabase/notificacoes.sql`](supabase/notificacoes.sql), troque `<CRON_SECRET>` pelo mesmo valor do passo 1 e rode no **SQL Editor**. Isso cria as tabelas de inscrição e liga a rodada a cada 5 minutos.
+4. **No celular**: abra o app instalado, entre com o PIN e vá em **Ajustes → Avisos → Ativar**. Escolha o horário do resumo e a antecedência, e toque em **Testar**.
+
+No iPhone, os avisos só funcionam com o app **instalado na tela inicial** (iOS 16.4 ou mais novo). Os avisos levam até 5 minutos de diferença, por causa da rodada.
 
 ## Publicar no GitHub Pages
 
@@ -55,7 +67,7 @@ git push -u origin main
 
 ## Atualizar o app
 
-Ao mudar algum arquivo, aumente a versão em `sw.js` (ex.: `fisiomais-v10` → `fisiomais-v11`) e o `?v=` de `styles.css`, `config.js`, `app.js` e `sync.js` no `index.html` (`?v=10` → `?v=11`), e envie de novo. Ao abrir o app com internet, o celular baixa a versão nova e recarrega sozinho uma vez. Os atendimentos salvos não são afetados.
+Ao mudar algum arquivo, aumente a versão em `sw.js` (ex.: `fisiomais-v13` → `fisiomais-v14`) e o `?v=` de `styles.css`, `config.js`, `app.js`, `sync.js` e `push.js` no `index.html` (`?v=13` → `?v=14`), e envie de novo. Ao abrir o app com internet, o celular baixa a versão nova e recarrega sozinho uma vez. Os atendimentos salvos não são afetados.
 
 ## Testar no computador
 

@@ -692,6 +692,7 @@ function renderPainel() {
 
 function renderAjustes() {
   window.Sync?.renderConta();
+  window.Avisos?.render();
   const nGrupos = gruposEmUso().filter(g => SERVICOS.some(s => s.grupo === g)).length;
   $("tiposResumo").textContent = `${plural(SERVICOS.length, "tipo")} em ${plural(nGrupos, "grupo")}`;
   const nEx = state.items.filter(a => a.exemplo).length;
