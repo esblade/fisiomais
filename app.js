@@ -977,5 +977,17 @@ const inicial = (location.hash || "").slice(1);
 setView(["agenda", "painel", "confirmar", "historico", "ajustes"].includes(inicial) ? inicial : "agenda");
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // Quando uma versão nova do app assume, recarrega uma vez para não misturar arquivos antigos e novos.
+  const tinhaVersao = !!navigator.serviceWorker.controller;
+  let recarregou = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!tinhaVersao || recarregou) return;
+    recarregou = true;
+    location.reload();
+  });
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+      .then(reg => reg.update())
+      .catch(() => {});
+  });
 }

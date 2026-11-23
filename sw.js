@@ -1,6 +1,7 @@
 // Guarda os arquivos do app para abrir mesmo sem internet.
-// Ao mudar qualquer arquivo do app, aumente a versão abaixo.
-const VERSION = "fisiomais-v7";
+// Ao mudar qualquer arquivo do app, aumente a versão abaixo
+// e o "?v=" de styles.css e app.js no index.html.
+const VERSION = "fisiomais-v8";
 const SHELL = [
   "./",
   "./index.html",
@@ -13,7 +14,12 @@ const SHELL = [
 ];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // "reload" ignora o cache do navegador: guarda sempre a versão publicada agora
+  e.waitUntil(
+    caches.open(VERSION)
+      .then(c => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", e => {
@@ -45,11 +51,12 @@ self.addEventListener("fetch", e => {
 
   if (url.origin !== location.origin) return;
 
-  // Arquivos do app: rede primeiro (pega atualizações), cache se estiver offline
+  // Arquivos do app: sempre confere com o servidor ("no-cache" revalida em vez de usar
+  // a cópia guardada pelo navegador) e só usa o cache quando estiver sem internet.
   e.respondWith(
-    fetch(req)
+    fetch(req.url, { cache: "no-cache", credentials: "same-origin" })
       .then(res => {
-        if (res.ok) caches.open(VERSION).then(c => c.put(req, res.clone()));
+        if (res.ok) { const copia = res.clone(); caches.open(VERSION).then(c => c.put(req, copia)); }
         return res;
       })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match("./index.html")))
