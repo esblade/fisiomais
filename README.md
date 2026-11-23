@@ -10,7 +10,7 @@ App de agenda para a fisioterapeuta Maisa Maria da Silva Alves. Funciona no celu
 - **Recibo pelo WhatsApp**: ao confirmar, o app prepara uma mensagem para a paciente com o serviço, o número da sessão (ex.: 3 de 4), a data, o pagamento e as datas de todas as sessões já feitas no pacote. Assim fica registrado na conversa quantas sessões ela fez. Dá para reenviar pelo botão *Enviar recibo* no atendimento.
 - **Painel**: resumo da semana ou do mês, com setas para ver períodos anteriores: realizados, recebido, a receber (atendido e não pago) e comparecimento, cada um comparado ao período anterior; gráfico de atendimentos por dia (toque no dia para abrir na agenda), presença, faturamento por tipo de atendimento e a lista de quem foi atendido e ainda não pagou.
 - **Histórico**: busca por paciente e filtros (próximos, realizados, a receber, faltas, cancelados).
-- **Ajustes**: tipos de atendimento (criar, editar e excluir, com valor, duração e local padrão; começam com os serviços do portfólio), remover os exemplos ou apagar a agenda.
+- **Ajustes**: menu com o perfil, *Tipos de atendimento* (tela própria com filtro por grupo para criar, editar e excluir tipos com valor, duração e local padrão), atendimentos guardados, remover exemplos e apagar a agenda.
 
 ## Onde ficam os dados
 
@@ -44,7 +44,7 @@ git push -u origin main
 
 ## Atualizar o app
 
-Ao mudar algum arquivo, aumente a versão em `sw.js` (`fisiomais-v8` → `fisiomais-v9`) e o `?v=` de `styles.css` e `app.js` no `index.html` (`?v=8` → `?v=9`), e envie de novo. Ao abrir o app com internet, o celular baixa a versão nova e recarrega sozinho uma vez. Os atendimentos salvos não são afetados.
+Ao mudar algum arquivo, aumente a versão em `sw.js` (ex.: `fisiomais-v9` → `fisiomais-v10`) e o `?v=` de `styles.css` e `app.js` no `index.html` (`?v=9` → `?v=10`), e envie de novo. Ao abrir o app com internet, o celular baixa a versão nova e recarrega sozinho uma vez. Os atendimentos salvos não são afetados.
 
 ## Testar no computador
 

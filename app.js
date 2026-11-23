@@ -149,6 +149,7 @@ function render() {
   if (state.view === "confirmar") renderPendentes();
   if (state.view === "historico") renderHistorico();
   if (state.view === "ajustes") renderAjustes();
+  if (state.view === "tipos") renderTipos();
   if (state.view === "painel") renderPainel();
 }
 
@@ -480,16 +481,27 @@ function renderHistorico() {
 function renderTipos() {
   const uso = {};
   state.items.forEach(a => (uso[a.servico] = (uso[a.servico] || 0) + 1));
-  $("tiposList").innerHTML = gruposEmUso().map(g => {
+  const grupos = gruposEmUso().filter(g => SERVICOS.some(s => s.grupo === g));
+  if (state.tipoFiltro && !grupos.includes(state.tipoFiltro)) state.tipoFiltro = "";
+  const gi = g => (GRUPOS.indexOf(g) >= 0 ? GRUPOS.indexOf(g) : 4);
+
+  // filtro por grupo
+  $("tiposFiltro").innerHTML = [["", `Todos · ${SERVICOS.length}`], ...grupos.map(g => [g, `${g} · ${SERVICOS.filter(s => s.grupo === g).length}`])]
+    .map(([g, rot]) => `<button type="button" class="chip${(state.tipoFiltro || "") === g ? " on" : ""}" data-tfiltro="${esc(g)}">${esc(rot)}</button>`).join("");
+
+  // lista: um cartão por grupo, linhas compactas
+  $("tiposList").innerHTML = grupos.filter(g => !state.tipoFiltro || g === state.tipoFiltro).map(g => {
     const its = SERVICOS.filter(s => s.grupo === g);
-    if (!its.length) return "";
-    const gc = "g" + ((GRUPOS.indexOf(g) >= 0 ? GRUPOS.indexOf(g) : 4) + 1), ic = ICONES_GRUPO[GRUPOS.indexOf(g) >= 0 ? GRUPOS.indexOf(g) : 4];
-    return `<section class="tipo-grupo ${gc}"><p class="tipo-g"><span class="svc-ic sm">${ic}</span>${esc(g)}</p><ul>${its.map(s => `
-      <li><button type="button" class="tipo" data-tipo="${esc(s.id)}">
-        <span class="tipo-nome">${esc(s.nome)}</span>
-        <span class="tipo-val">${s.valor ? brl(s.valor) : "a combinar"}</span>
-        <span class="tipo-dur">${fmtDur(s.duracao)}${s.local ? ` · ${esc(s.local)}` : ""}${uso[s.id] ? ` · ${plural(uso[s.id], "agendamento")}` : ""}</span>
-      </button></li>`).join("")}</ul></section>`;
+    return `<section class="tipo-grupo g${gi(g) + 1}">
+      <p class="tipo-g"><span class="svc-ic sm">${ICONES_GRUPO[gi(g)]}</span>${esc(g)}<span class="tipo-n">${its.length}</span></p>
+      <ul>${its.map(s => `
+        <li><button type="button" class="tipo" data-tipo="${esc(s.id)}">
+          <span class="tipo-nome">${esc(s.nome)}</span>
+          <span class="tipo-val">${s.valor ? brl(s.valor) : "a combinar"}</span>
+          <span class="tipo-dur"><span class="pill">${fmtDur(s.duracao)}</span>${s.local ? `<span class="pill">${esc(s.local)}</span>` : ""}${uso[s.id] ? `<span class="pill soft">${plural(uso[s.id], "agendamento")}</span>` : ""}</span>
+          <svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+        </button></li>`).join("")}</ul>
+    </section>`;
   }).join("");
 }
 
@@ -678,17 +690,21 @@ function renderPainel() {
 }
 
 function renderAjustes() {
-  renderTipos();
-  $("rowEx").hidden = !state.items.some(a => a.exemplo);
-  $("totalItens").textContent = `${state.items.length} atendimento${state.items.length === 1 ? "" : "s"} guardado${state.items.length === 1 ? "" : "s"} neste aparelho.`;
+  const nGrupos = gruposEmUso().filter(g => SERVICOS.some(s => s.grupo === g)).length;
+  $("tiposResumo").textContent = `${plural(SERVICOS.length, "tipo")} em ${plural(nGrupos, "grupo")}`;
+  const nEx = state.items.filter(a => a.exemplo).length;
+  $("rowEx").hidden = !nEx;
+  $("totalItens").textContent = `${state.items.length} neste aparelho${nEx ? `, ${nEx} de exemplo` : ""}`;
 }
 
 /* ============ Navegação ============ */
+const VIEWS = ["agenda", "painel", "confirmar", "historico", "ajustes", "tipos"];
 function setView(v) {
   state.view = v;
-  ["agenda", "painel", "confirmar", "historico", "ajustes"].forEach(n => ($("view-" + n).hidden = n !== v));
-  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.view === v));
-  $("btnNovo").hidden = v === "ajustes" || v === "painel";
+  VIEWS.forEach(n => ($("view-" + n).hidden = n !== v));
+  const aba = v === "tipos" ? "ajustes" : v; // a tela de tipos fica dentro de Ajustes
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.view === aba));
+  $("btnNovo").hidden = v === "ajustes" || v === "painel" || v === "tipos";
   if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
   window.scrollTo(0, 0);
   render();
@@ -959,6 +975,9 @@ window.addEventListener("scroll", () => ($("tip").hidden = true), { passive: tru
 
 $("btnNovoTipo").addEventListener("click", () => openTipo(null));
 $("tiposList").addEventListener("click", e => { const b = e.target.closest("[data-tipo]"); if (b) openTipo(SVC[b.dataset.tipo]); });
+$("tiposFiltro").addEventListener("click", e => { const b = e.target.closest("[data-tfiltro]"); if (b) { state.tipoFiltro = b.dataset.tfiltro; renderTipos(); } });
+$("abrirTipos").addEventListener("click", () => setView("tipos"));
+$("voltarAjustes").addEventListener("click", () => setView("ajustes"));
 $("formTipo").addEventListener("submit", salvarTipo);
 $("btnExcluirTipo").addEventListener("click", excluirTipo);
 $("btnEx").addEventListener("click", () => { state.items = state.items.filter(x => !x.exemplo); store.save(); render(); toast("Exemplos removidos"); });
@@ -974,7 +993,7 @@ setInterval(renderBadge, 60000);
 
 // Inicialização
 const inicial = (location.hash || "").slice(1);
-setView(["agenda", "painel", "confirmar", "historico", "ajustes"].includes(inicial) ? inicial : "agenda");
+setView(VIEWS.includes(inicial) ? inicial : "agenda");
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   // Quando uma versão nova do app assume, recarrega uma vez para não misturar arquivos antigos e novos.

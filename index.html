@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 <div class="app">
@@ -141,22 +141,61 @@
 
   <!-- AJUSTES -->
   <section id="view-ajustes" class="view" hidden>
-    <p class="eyebrow">Ajustes</p>
+    <h1>Ajustes</h1>
+
+    <div class="perfil card">
+      <span class="avatar">M</span>
+      <div>
+        <p class="perfil-n">Maisa Maria da Silva Alves</p>
+        <p class="sub">Fisioterapeuta · Saúde da Mulher e Obstétrica</p>
+      </div>
+    </div>
+
+    <p class="menu-t">Atendimentos</p>
+    <ul class="menu card">
+      <li><button type="button" class="menu-i" id="abrirTipos">
+        <span class="menu-ic g2"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+        <span class="menu-txt"><b>Tipos de atendimento</b><small id="tiposResumo"></small></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+      </button></li>
+    </ul>
+
+    <p class="menu-t">Seus dados</p>
+    <ul class="menu card">
+      <li><div class="menu-i">
+        <span class="menu-ic g5"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg></span>
+        <span class="menu-txt"><b>Atendimentos guardados</b><small id="totalItens"></small></span>
+      </div></li>
+      <li id="rowEx"><div class="menu-i">
+        <span class="menu-ic g4"><svg viewBox="0 0 24 24"><path d="M12 3.5 14.4 9l5.6.5-4.3 3.7 1.3 5.5L12 15.8l-5 2.9 1.3-5.5L4 9.5 9.6 9z"/></svg></span>
+        <span class="menu-txt"><b>Atendimentos de exemplo</b><small>Fictícios, vieram com o app</small></span>
+        <button class="btn small" id="btnEx" type="button">Remover</button>
+      </div></li>
+      <li><div class="menu-i">
+        <span class="menu-ic bad"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 12a1.5 1.5 0 0 0 1.5 1.4h6a1.5 1.5 0 0 0 1.5-1.4l1-12M9.5 7V4.5h5V7"/></svg></span>
+        <span class="menu-txt"><b>Apagar tudo</b><small>Não pode ser desfeito</small></span>
+        <button class="btn small danger" id="btnZerar" type="button">Apagar</button>
+      </div></li>
+    </ul>
+    <p class="sub menu-nota">A agenda fica guardada neste aparelho, no navegador em que o app foi aberto.</p>
+
+    <p class="menu-t">Usar como app</p>
+    <div class="card dica-app">
+      <span class="menu-ic g3"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+      <p class="sub">No celular, abra o menu do navegador e toque em <b>Adicionar à tela inicial</b> (Android) ou <b>Compartilhar → Adicionar à Tela de Início</b> (iPhone).</p>
+    </div>
+  </section>
+
+  <!-- TIPOS DE ATENDIMENTO -->
+  <section id="view-tipos" class="view" hidden>
+    <button class="voltar" id="voltarAjustes" type="button"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>Ajustes</button>
     <div class="tipos-head">
       <h1>Tipos de atendimento</h1>
-      <button class="btn small" id="btnNovoTipo" type="button">+ Novo tipo</button>
+      <button class="btn small primary" id="btnNovoTipo" type="button">+ Novo</button>
     </div>
-    <p class="sub">Valor e duração padrão de cada atendimento. Ao agendar, eles já vêm preenchidos e podem ser alterados só para aquele atendimento.</p>
+    <p class="sub">Valor e duração padrão de cada atendimento. Ao agendar, eles vêm preenchidos e podem ser alterados só para aquele atendimento.</p>
+    <div class="chips" id="tiposFiltro"></div>
     <div id="tiposList" class="tipos"></div>
-
-    <h2 class="sec-title">Seus dados</h2>
-    <p class="sub">A agenda fica guardada neste aparelho, no navegador em que o app foi aberto.</p>
-    <ul class="settings">
-      <li id="rowEx"><div><h3>Remover exemplos</h3><p>Apaga os atendimentos fictícios que vieram com o app.</p></div><button class="btn" id="btnEx" type="button">Remover</button></li>
-      <li><div><h3>Apagar tudo</h3><p>Remove todos os atendimentos deste aparelho. Não pode ser desfeito.</p></div><button class="btn danger" id="btnZerar" type="button">Apagar</button></li>
-    </ul>
-    <p class="sub" id="totalItens"></p>
-    <p class="sub">Para usar como app: no celular, abra o menu do navegador e toque em <em>Adicionar à tela inicial</em>.</p>
   </section>
 
   <footer class="foot"><span>Maisa Maria da Silva Alves — Fisioterapeuta</span></footer>
@@ -169,7 +208,7 @@
   <button type="button" class="tab" data-view="confirmar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.8-5"/></svg>Confirmar<b class="badge" id="badge" hidden></b></button>
   <button type="button" class="tab" data-view="painel"><svg viewBox="0 0 24 24"><path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/></svg>Painel</button>
   <button type="button" class="tab" data-view="historico"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Histórico</button>
-  <button type="button" class="tab" data-view="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6"/></svg>Ajustes</button>
+  <button type="button" class="tab" data-view="ajustes"><svg viewBox="0 0 24 24"><path d="M12.2 2.5h-.4a1.9 1.9 0 0 0-1.9 1.9v.2a1.9 1.9 0 0 1-1 1.6l-.4.2a1.9 1.9 0 0 1-1.9 0l-.1-.1a1.9 1.9 0 0 0-2.6.7l-.2.4a1.9 1.9 0 0 0 .7 2.6l.1.1a1.9 1.9 0 0 1 1 1.6v.5a1.9 1.9 0 0 1-1 1.6l-.1.1a1.9 1.9 0 0 0-.7 2.6l.2.4a1.9 1.9 0 0 0 2.6.7l.1-.1a1.9 1.9 0 0 1 1.9 0l.4.2a1.9 1.9 0 0 1 1 1.6v.2a1.9 1.9 0 0 0 1.9 1.9h.4a1.9 1.9 0 0 0 1.9-1.9v-.2a1.9 1.9 0 0 1 1-1.6l.4-.2a1.9 1.9 0 0 1 1.9 0l.1.1a1.9 1.9 0 0 0 2.6-.7l.2-.4a1.9 1.9 0 0 0-.7-2.6l-.1-.1a1.9 1.9 0 0 1-1-1.6v-.5a1.9 1.9 0 0 1 1-1.6l.1-.1a1.9 1.9 0 0 0 .7-2.6l-.2-.4a1.9 1.9 0 0 0-2.6-.7l-.1.1a1.9 1.9 0 0 1-1.9 0l-.4-.2a1.9 1.9 0 0 1-1-1.6v-.2a1.9 1.9 0 0 0-1.9-1.9z"/><circle cx="12" cy="12" r="3"/></svg>Ajustes</button>
 </nav>
 
 <!-- Formulário de agendamento -->
@@ -288,6 +327,6 @@
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
