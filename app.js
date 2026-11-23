@@ -45,7 +45,24 @@ function gruposEmUso() {
     .filter((g, i, arr) => arr.indexOf(g) === i);
 }
 indexarServicos();
-const fmtDur = m => { m = +m || 60; return m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
+
+// Cor e ícone por grupo de serviço
+const ICONES_GRUPO = [
+  `<svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2.5"/><path d="M9.5 3.5h5v3h-5zM9.5 12h5M9.5 16h3"/></svg>`,
+  `<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`,
+  `<svg viewBox="0 0 24 24"><path d="M12 3.5s6 6.3 6 10.8a6 6 0 0 1-12 0C6 9.8 12 3.5 12 3.5z"/></svg>`,
+  `<svg viewBox="0 0 24 24"><path d="M12 4c2 3 2 6 0 9-2-3-2-6 0-9zM12 13c3-2.5 6-2.8 8.5-1.5-1 3-4.5 4.5-8.5 1.5zM12 13c-3-2.5-6-2.8-8.5-1.5 1 3 4.5 4.5 8.5 1.5zM12 13v7"/></svg>`,
+  `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M8.5 12h7"/></svg>`
+];
+function grupoIdx(a) {
+  const g = (SVC[a.servico] || a).grupo;
+  const i = GRUPOS.indexOf(g);
+  return i >= 0 ? i : 4;
+}
+const grupoCls = a => "g" + (grupoIdx(a) + 1);
+const grupoIcone = a => ICONES_GRUPO[grupoIdx(a)];
+
+const fmtDur =m => { m = +m || 60; return m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
 const STATUS = { agendado: "Agendado", confirmado: "Confirmado", realizado: "Realizado", faltou: "Faltou", cancelado: "Cancelado" };
 
 /* ============ Utilidades ============ */
@@ -117,7 +134,15 @@ if (!loaded) store.save();
 try { navigator.storage?.persist?.(); } catch (e) {}
 
 /* ============ Render ============ */
+function renderSaudacao() {
+  const h = new Date().getHours();
+  $("hello").textContent = `${h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, Maisa`;
+  const d = fmtLongo(todayIso());
+  $("hojeTxt").textContent = d.charAt(0).toUpperCase() + d.slice(1);
+}
+
 function render() {
+  renderSaudacao();
   renderBanner();
   renderBadge();
   if (state.view === "agenda") renderAgenda();
@@ -249,12 +274,18 @@ function apptHTML(a, { mostrarData = false } = {}) {
   const wa = a.status !== "realizado" && a.status !== "cancelado" ? waLink(a, "lembrete") : null;
   const podeConfirmar = a.status === "agendado" || a.status === "confirmado";
   const quando = a.realizadoEm ? new Date(a.realizadoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
-  return `<li class="appt is-${a.status}">
-    <div class="hour">${esc(a.hora)}<small>${a.duracao >= 240 ? "plantão" : (a.duracao || 60) + " min"}</small></div>
+  return `<li class="appt is-${a.status} ${grupoCls(a)}">
+    <div class="appt-top">
+      <span class="svc-ic" aria-hidden="true">${grupoIcone(a)}</span>
+      <div class="appt-main">
+        ${mostrarData ? `<p class="date-line">${fmtCurto(a.data)}</p>` : ""}
+        <p class="name">${esc(a.paciente)}</p>
+        <p class="svc">${esc(svcNome(a))}</p>
+      </div>
+      <div class="hour">${esc(a.hora)}<small>${fmtDur(a.duracao)}</small></div>
+    </div>
     <div class="body">
-      ${mostrarData ? `<p class="date-line">${fmtCurto(a.data)}</p>` : ""}
-      <p class="name">${esc(a.paciente)}<span class="tag ${a.status}">${STATUS[a.status] || a.status}</span>${a.exemplo ? '<span class="tag ex">exemplo</span>' : ""}</p>
-      <p class="svc">${esc(svcNome(a))}</p>
+      <div class="chips-row"><span class="tag ${a.status}">${STATUS[a.status] || a.status}</span>${a.exemplo ? '<span class="tag ex">exemplo</span>' : ""}</div>
       ${meta ? `<ul class="meta">${meta}</ul>` : ""}
       ${a.obs ? `<p class="obs">${esc(a.obs)}</p>` : ""}
       ${a.status === "realizado" ? `<p class="done">${ICON_CHECK}<span>Atendimento confirmado${quando ? ` em ${quando}` : ""}${a.evolucao ? `<span class="ev">${esc(a.evolucao)}</span>` : ""}</span></p>` : ""}
@@ -349,7 +380,7 @@ function timelineHTML(doDia) {
   its.forEach(({ a, ini, fim, col, cols }) => {
     const alto = Math.max(px(fim) - px(ini), 40);
     const curto = alto < 58;
-    h += `<button type="button" class="tl-ev is-${a.status}${curto ? " curto" : ""}" data-act="detalhe" data-id="${a.id}"
+    h += `<button type="button" class="tl-ev is-${a.status} ${grupoCls(a)}${curto ? " curto" : ""}" data-act="detalhe" data-id="${a.id}"
       style="top:${px(ini) + 1}px;height:${alto - 2}px;left:calc(var(--tl-gutter) + (100% - var(--tl-gutter)) * ${col} / ${cols});width:calc((100% - var(--tl-gutter)) / ${cols} - 4px)">
       <span class="tl-name">${esc(a.paciente)}</span>
       <span class="tl-meta">${esc(a.hora)}–${pad(Math.floor(fim / 60) % 24)}:${pad(fim % 60)} · ${esc(svcNome(a))}</span>
@@ -394,19 +425,24 @@ function renderAgenda() {
       : `<li class="empty"><h3>Nenhum atendimento neste dia</h3><p>Toque em <em>Agendar</em> para marcar uma paciente.</p></li>`;
   }
 
-  // resumo do mês do dia selecionado
-  const mes = sel.slice(0, 7);
-  const doMes = state.items.filter(a => a.data.slice(0, 7) === mes);
-  const recebido = doMes.filter(a => a.pagamento && a.pagamento !== "Incluso no pacote" && ativo(a)).reduce((s, a) => s + valor(a), 0);
-  const abertos = doMes.filter(a => !a.pagamento && valor(a) > 0 && (a.status === "realizado" || a.status === "agendado" || a.status === "confirmado"));
-  const feitos = doMes.filter(a => a.status === "realizado").length;
-  const faltas = doMes.filter(a => a.status === "faltou").length;
-  $("sRecebido").textContent = brl(recebido);
-  $("sReceber").textContent = brl(abertos.reduce((s, a) => s + valor(a), 0));
-  $("sReceberN").textContent = abertos.length ? `${abertos.length} atendimento${abertos.length > 1 ? "s" : ""}` : "tudo em dia";
-  $("sFeitos").textContent = feitos;
-  $("sFaltas").textContent = faltas ? `${faltas} falta${faltas > 1 ? "s" : ""}` : "nenhuma falta";
-  document.querySelector(".summary .eyebrow").textContent = "Em " + parse(sel).toLocaleDateString("pt-BR", { month: "long" });
+  renderHero();
+}
+
+// Cartão de hoje, no topo da agenda
+function renderHero() {
+  const t = todayIso();
+  const hoje = state.items.filter(a => a.data === t && ativo(a)).sort(byTime);
+  const previsto = hoje.filter(a => a.status !== "faltou").reduce((s, a) => s + valor(a), 0);
+  const pend = state.items.filter(pendente).length;
+  $("hAt").textContent = hoje.length;
+  $("hAtL").textContent = hoje.length === 1 ? "atendimento" : "atendimentos";
+  $("hVal").textContent = brl(previsto);
+  $("hPend").textContent = pend;
+  const agora = nowHM();
+  const prox = hoje.find(a => a.hora >= agora && a.status !== "realizado");
+  $("hNext").innerHTML = prox
+    ? `<span class="dot"></span>Próximo: <b>${esc(prox.hora)}</b> · ${esc(prox.paciente)}`
+    : hoje.length ? `<span class="dot"></span>Nenhum atendimento restante hoje` : `<span class="dot"></span>Dia livre`;
 }
 
 function renderPendentes() {
@@ -429,7 +465,8 @@ function renderHistorico() {
     return true;
   });
   list.sort(f === "proximos" ? byTime : (a, b) => byTime(b, a));
-  $("histList").innerHTML = list.length ? list.map(a => `<li data-act="editar" data-id="${a.id}">
+  $("histList").innerHTML = list.length ? list.map(a => `<li data-act="editar" data-id="${a.id}" class="${grupoCls(a)}">
+      <span class="svc-ic sm" aria-hidden="true">${grupoIcone(a)}</span>
       <span class="h-date">${fmtCurto(a.data)} · ${esc(a.hora)}</span>
       <span class="h-name">${esc(a.paciente)}</span>
       <span class="h-svc">${esc(svcNome(a))}${a.sessao ? ` · sessão ${esc(a.sessao)}` : ""}</span>
@@ -446,7 +483,8 @@ function renderTipos() {
   $("tiposList").innerHTML = gruposEmUso().map(g => {
     const its = SERVICOS.filter(s => s.grupo === g);
     if (!its.length) return "";
-    return `<section class="tipo-grupo"><p class="tipo-g">${esc(g)}</p><ul>${its.map(s => `
+    const gc = "g" + ((GRUPOS.indexOf(g) >= 0 ? GRUPOS.indexOf(g) : 4) + 1), ic = ICONES_GRUPO[GRUPOS.indexOf(g) >= 0 ? GRUPOS.indexOf(g) : 4];
+    return `<section class="tipo-grupo ${gc}"><p class="tipo-g"><span class="svc-ic sm">${ic}</span>${esc(g)}</p><ul>${its.map(s => `
       <li><button type="button" class="tipo" data-tipo="${esc(s.id)}">
         <span class="tipo-nome">${esc(s.nome)}</span>
         <span class="tipo-val">${s.valor ? brl(s.valor) : "a combinar"}</span>
