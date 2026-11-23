@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fisio+ · Maisa Alves</title>
+<meta name="description" content="Agenda de atendimentos da fisioterapeuta Maisa Maria da Silva Alves.">
+<meta name="theme-color" content="#f8f3ea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Fisio+">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=Poppins:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg class="curves" viewBox="0 0 400 900" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M215 0 C 230 160, 320 260, 350 420 S 330 700, 400 860" fill="none" stroke="var(--rose-line)" stroke-width="1.2"/>
+  <path d="M300 0 C 300 150, 390 300, 398 480" fill="none" stroke="var(--sage-line)" stroke-width="1.2"/>
+</svg>
+
+<div class="app">
+  <header class="brand">
+    <p class="brand-name">Maisa Maria da Silva Alves</p>
+    <span class="brand-rule"></span>
+    <p class="brand-role">Fisioterapeuta</p>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- AGENDA -->
+  <section id="view-agenda" class="view">
+    <p class="eyebrow">Agenda</p>
+    <div class="day-head">
+      <h1 id="dayTitle">Hoje</h1>
+      <label class="pick-date" title="Escolher data">
+        <span class="sr">Escolher data</span>
+        <input type="date" id="pickDate">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+      </label>
+    </div>
+    <p class="sub" id="daySub"></p>
+
+    <div class="week">
+      <button class="wk-arrow" id="wkPrev" type="button" aria-label="Semana anterior">‹</button>
+      <div class="wk-days" id="wkDays"></div>
+      <button class="wk-arrow" id="wkNext" type="button" aria-label="Próxima semana">›</button>
+    </div>
+
+    <ol class="appts" id="dayList"></ol>
+
+    <div class="summary">
+      <p class="eyebrow">Neste mês</p>
+      <div class="sum-grid">
+        <div class="sum"><span class="bar"></span><h3>Recebido</h3><p class="sum-val" id="sRecebido">R$ 0</p></div>
+        <div class="sum"><span class="bar"></span><h3>A receber</h3><p class="sum-val" id="sReceber">R$ 0</p><p class="sum-note" id="sReceberN"></p></div>
+        <div class="sum"><span class="bar"></span><h3>Realizados</h3><p class="sum-val" id="sFeitos">0</p><p class="sum-note" id="sFaltas"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFIRMAR -->
+  <section id="view-confirmar" class="view" hidden>
+    <p class="eyebrow">Confirmar atendimentos</p>
+    <h1>O que já aconteceu?</h1>
+    <p class="sub">Atendimentos com horário passado que ainda não foram marcados como realizados ou falta.</p>
+    <ol class="appts" id="pendList"></ol>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section id="view-historico" class="view" hidden>
+    <p class="eyebrow">Atendimentos</p>
+    <h1>Histórico</h1>
+    <div class="filters">
+      <input id="fBusca" type="search" placeholder="Buscar paciente ou serviço" aria-label="Buscar paciente ou serviço">
+      <div class="chips" id="fChips">
+        <button type="button" class="chip on" data-f="">Todos</button>
+        <button type="button" class="chip" data-f="proximos">Próximos</button>
+        <button type="button" class="chip" data-f="realizado">Realizados</button>
+        <button type="button" class="chip" data-f="receber">A receber</button>
+        <button type="button" class="chip" data-f="faltou">Faltas</button>
+        <button type="button" class="chip" data-f="cancelado">Cancelados</button>
+      </div>
+    </div>
+    <ol class="hist" id="histList"></ol>
+    <p class="sub" id="histFoot"></p>
+  </section>
+
+  <!-- AJUSTES -->
+  <section id="view-ajustes" class="view" hidden>
+    <p class="eyebrow">Ajustes</p>
+    <h1>Seus dados</h1>
+    <p class="sub">A agenda fica guardada neste aparelho. Faça uma cópia de segurança de vez em quando e use-a para levar os dados para outro celular ou computador.</p>
+    <ul class="settings">
+      <li><div><h3>Baixar cópia de segurança</h3><p>Salva um arquivo .json com todos os atendimentos.</p></div><button class="btn" id="btnExport" type="button">Baixar</button></li>
+      <li><div><h3>Restaurar cópia</h3><p>Substitui a agenda deste aparelho pelo conteúdo do arquivo.</p></div><label class="btn" for="fileImport">Escolher arquivo</label><input id="fileImport" type="file" accept="application/json,.json" hidden></li>
+      <li id="rowEx"><div><h3>Remover exemplos</h3><p>Apaga os atendimentos fictícios que vieram com o app.</p></div><button class="btn" id="btnEx" type="button">Remover</button></li>
+      <li><div><h3>Apagar tudo</h3><p>Remove todos os atendimentos deste aparelho. Não pode ser desfeito.</p></div><button class="btn danger" id="btnZerar" type="button">Apagar</button></li>
+    </ul>
+    <p class="sub" id="lastBackup"></p>
+    <p class="sub">Para usar como app: no celular, abra o menu do navegador e toque em <em>Adicionar à tela inicial</em>.</p>
+  </section>
+
+  <footer class="foot"><span>Maisa Maria da Silva Alves — Fisioterapeuta</span></footer>
+</div>
+
+<button class="fab" id="btnNovo" type="button"><span aria-hidden="true">+</span> Agendar</button>
+
+<nav class="tabbar" aria-label="Seções">
+  <button type="button" class="tab on" data-view="agenda"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Agenda</button>
+  <button type="button" class="tab" data-view="confirmar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.8-5"/></svg>Confirmar<b class="badge" id="badge" hidden></b></button>
+  <button type="button" class="tab" data-view="historico"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Histórico</button>
+  <button type="button" class="tab" data-view="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6"/></svg>Ajustes</button>
+</nav>
+
+<!-- Formulário de agendamento -->
+<div class="sheet-bg" id="sheetForm" hidden>
+  <form class="sheet" id="form" novalidate>
+    <div class="sheet-grip"></div>
+    <p class="eyebrow" id="formEyebrow">Novo agendamento</p>
+    <h2 id="formTitle">Agendar atendimento</h2>
+    <div class="fields">
+      <div class="field full"><label for="f-paciente">Paciente</label><input id="f-paciente" list="dlPacientes" autocomplete="off" placeholder="Nome completo" required><datalist id="dlPacientes"></datalist></div>
+      <div class="field"><label for="f-telefone">WhatsApp</label><input id="f-telefone" inputmode="tel" placeholder="(82) 90000-0000"></div>
+      <div class="field"><label for="f-local">Local</label><select id="f-local"><option>Consultório</option><option>Domicílio</option><option>Hospital / maternidade</option><option>Online</option></select></div>
+      <div class="field full"><label for="f-servico">Serviço</label><select id="f-servico"></select><span class="hint" id="svcHint"></span></div>
+      <div class="field"><label for="f-data">Data</label><input id="f-data" type="date" required></div>
+      <div class="field"><label for="f-hora">Horário</label><input id="f-hora" type="time" step="900" required></div>
+      <div class="field"><label for="f-duracao">Duração</label><select id="f-duracao"><option value="60">60 min</option><option value="75">75 min</option><option value="90">90 min</option><option value="120">2 horas</option><option value="240">Parto / plantão</option></select></div>
+      <div class="field"><label for="f-sessao">Sessão do pacote</label><input id="f-sessao" placeholder="ex.: 2/4"></div>
+      <div class="field"><label for="f-valor">Valor (R$)</label><input id="f-valor" type="number" min="0" step="10" inputmode="decimal"></div>
+      <div class="field"><label for="f-status">Situação</label><select id="f-status"><option value="agendado">Agendado</option><option value="confirmado">Paciente confirmou</option><option value="realizado">Realizado</option><option value="faltou">Faltou</option><option value="cancelado">Cancelado</option></select></div>
+      <div class="field full"><label for="f-obs">Observações</label><textarea id="f-obs" rows="2" placeholder="Semanas de gestação, queixas, lembretes…"></textarea></div>
+    </div>
+    <p class="warn" id="conflito" hidden></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn danger" id="btnExcluir" hidden>Excluir</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Fechar</button>
+      <button type="submit" class="btn primary">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Confirmação de atendimento -->
+<div class="sheet-bg" id="sheetConf" hidden>
+  <form class="sheet" id="formConf" novalidate>
+    <div class="sheet-grip"></div>
+    <p class="eyebrow">Confirmar atendimento</p>
+    <h2 id="confTitle"></h2>
+    <p class="sub" id="confSub"></p>
+
+    <fieldset class="seg" id="confPresenca">
+      <legend>A paciente compareceu?</legend>
+      <label><input type="radio" name="presenca" value="realizado" checked><span>Sim, atendimento feito</span></label>
+      <label><input type="radio" name="presenca" value="faltou"><span>Não, faltou</span></label>
+    </fieldset>
+
+    <div id="confPagBox">
+      <div class="fields">
+        <div class="field"><label for="c-valor">Valor (R$)</label><input id="c-valor" type="number" min="0" step="10" inputmode="decimal"></div>
+        <div class="field"><label for="c-forma">Pagamento</label><select id="c-forma"><option value="">Ainda não pago</option><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Incluso no pacote</option></select></div>
+        <div class="field full"><label for="c-evolucao">Anotações da sessão</label><textarea id="c-evolucao" rows="3" placeholder="Condutas, evolução, orientações para casa…"></textarea></div>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Cancelar</button>
+      <button type="submit" class="btn primary" id="btnConfOk">Confirmar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
