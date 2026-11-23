@@ -1,12 +1,14 @@
 // Guarda os arquivos do app para abrir mesmo sem internet.
 // Ao mudar qualquer arquivo do app, aumente a versão abaixo
 // e o "?v=" de styles.css e app.js no index.html.
-const VERSION = "fisiomais-v9";
+const VERSION = "fisiomais-v10";
 const SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./config.js",
+  "./sync.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",
@@ -35,8 +37,8 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Fontes do Google: cache primeiro
-  if (url.host === "fonts.googleapis.com" || url.host === "fonts.gstatic.com") {
+  // Fontes do Google e biblioteca do Supabase (versão fixa): cache primeiro
+  if (url.host === "fonts.googleapis.com" || url.host === "fonts.gstatic.com" || url.host === "cdn.jsdelivr.net") {
     e.respondWith(
       caches.open(VERSION).then(async c => {
         const hit = await c.match(req);

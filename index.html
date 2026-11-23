@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
 <div class="app">
@@ -24,6 +24,7 @@
     <div>
       <p class="hello" id="hello">Olá, Maisa</p>
       <p class="today-txt" id="hojeTxt"></p>
+      <button type="button" class="sync-st" id="syncSt" hidden></button>
     </div>
     <span class="avatar" aria-label="Maisa Maria da Silva Alves, fisioterapeuta">M</span>
   </header>
@@ -160,6 +161,20 @@
       </button></li>
     </ul>
 
+    <p class="menu-t">Sincronização</p>
+    <ul class="menu card" id="contaMenu">
+      <li><div class="menu-i">
+        <span class="menu-ic g3"><svg viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5z"/></svg></span>
+        <span class="menu-txt"><b id="contaTitulo">Sincronização</b><small id="contaSub"></small></span>
+        <button class="btn small" id="contaAcao" type="button" hidden></button>
+      </div></li>
+      <li id="contaSairLi" hidden><div class="menu-i">
+        <span class="menu-ic"><svg viewBox="0 0 24 24"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M9 16l-4-4 4-4M5 12h11"/></svg></span>
+        <span class="menu-txt"><b>Sair da conta</b><small>Apaga a cópia deste aparelho; os dados continuam no banco</small></span>
+        <button class="btn small danger" id="btnSair" type="button">Sair</button>
+      </div></li>
+    </ul>
+
     <p class="menu-t">Seus dados</p>
     <ul class="menu card">
       <li><div class="menu-i">
@@ -173,11 +188,11 @@
       </div></li>
       <li><div class="menu-i">
         <span class="menu-ic bad"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6.5 7l1 12a1.5 1.5 0 0 0 1.5 1.4h6a1.5 1.5 0 0 0 1.5-1.4l1-12M9.5 7V4.5h5V7"/></svg></span>
-        <span class="menu-txt"><b>Apagar tudo</b><small>Não pode ser desfeito</small></span>
+        <span class="menu-txt"><b>Apagar tudo</b><small id="apagarSub">Não pode ser desfeito</small></span>
         <button class="btn small danger" id="btnZerar" type="button">Apagar</button>
       </div></li>
     </ul>
-    <p class="sub menu-nota">A agenda fica guardada neste aparelho, no navegador em que o app foi aberto.</p>
+    <p class="sub menu-nota" id="dadosNota">A agenda fica guardada neste aparelho, no navegador em que o app foi aberto.</p>
 
     <p class="menu-t">Usar como app</p>
     <div class="card dica-app">
@@ -292,6 +307,26 @@
   </form>
 </div>
 
+<!-- Entrar (sincronização) -->
+<div class="sheet-bg" id="sheetLogin" hidden>
+  <form class="sheet" id="formLogin" novalidate>
+    <div class="sheet-grip"></div>
+    <p class="eyebrow">Sincronização</p>
+    <h2>Entrar no Fisio+</h2>
+    <p class="sub">Com a conta, a agenda fica salva no banco e aparece igual no celular e no computador. Sem internet, continua funcionando e envia as alterações depois.</p>
+    <div class="fields">
+      <div class="field full"><label for="l-email">E-mail</label><input id="l-email" type="email" autocomplete="username" inputmode="email" required></div>
+      <div class="field full"><label for="l-senha">Senha</label><input id="l-senha" type="password" autocomplete="current-password" required></div>
+    </div>
+    <p class="warn" id="loginErro" hidden></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn ghost" id="semConta">Usar só neste aparelho</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn primary" id="btnEntrar">Entrar</button>
+    </div>
+  </form>
+</div>
+
 <!-- Detalhe do atendimento (linha do tempo) -->
 <div class="sheet-bg" id="sheetDetalhe" hidden>
   <div class="sheet">
@@ -327,6 +362,9 @@
 <div class="toast" id="toast" role="status" hidden></div>
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
-<script src="app.js?v=9"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js?v=10"></script>
+<script src="app.js?v=10"></script>
+<script src="sync.js?v=10"></script>
 </body>
 </html>
