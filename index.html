@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fisio+ · Maisa Alves</title>
 <meta name="description" content="Agenda de atendimentos da fisioterapeuta Maisa Maria da Silva Alves.">
-<meta name="theme-color" content="#f8f3ea">
+<meta name="theme-color" content="#f6f2f4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -15,27 +15,34 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=Poppins:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<svg class="curves" viewBox="0 0 400 900" preserveAspectRatio="none" aria-hidden="true">
-  <path d="M215 0 C 230 160, 320 260, 350 420 S 330 700, 400 860" fill="none" stroke="var(--rose-line)" stroke-width="1.2"/>
-  <path d="M300 0 C 300 150, 390 300, 398 480" fill="none" stroke="var(--sage-line)" stroke-width="1.2"/>
-</svg>
-
 <div class="app">
-  <header class="brand">
-    <p class="brand-name">Maisa Maria da Silva Alves</p>
-    <span class="brand-rule"></span>
-    <p class="brand-role">Fisioterapeuta</p>
+  <header class="appbar">
+    <div>
+      <p class="hello" id="hello">Olá, Maisa</p>
+      <p class="today-txt" id="hojeTxt"></p>
+    </div>
+    <span class="avatar" aria-label="Maisa Maria da Silva Alves, fisioterapeuta">M</span>
   </header>
 
   <div id="banner" class="banner" hidden></div>
 
   <!-- AGENDA -->
   <section id="view-agenda" class="view">
-    <p class="eyebrow">Agenda</p>
+    <div class="hero">
+      <p class="hero-l">Hoje</p>
+      <div class="hero-stats">
+        <div><b id="hAt">0</b><span id="hAtL">atendimentos</span></div>
+        <div><b id="hVal">R$ 0</b><span>previsto</span></div>
+        <div><b id="hPend">0</b><span>a confirmar</span></div>
+      </div>
+      <p class="hero-next" id="hNext"></p>
+    </div>
+
+    <div class="card cal-card">
     <div class="cal-head">
       <h1 class="cal-title" id="calTitle">Novembro</h1>
       <div class="cal-nav">
@@ -52,22 +59,14 @@
 
     <div class="month" id="monthGrid"></div>
     <div class="wk-days" id="wkDays" hidden></div>
+    </div>
 
     <div class="day-bar">
       <h2 id="dayTitle"></h2>
       <p class="sub" id="daySub"></p>
     </div>
     <ol class="appts" id="dayList"></ol>
-    <div class="timeline" id="timeline" hidden></div>
-
-    <div class="summary">
-      <p class="eyebrow">Neste mês</p>
-      <div class="sum-grid">
-        <div class="sum"><span class="bar"></span><h3>Recebido</h3><p class="sum-val" id="sRecebido">R$ 0</p></div>
-        <div class="sum"><span class="bar"></span><h3>A receber</h3><p class="sum-val" id="sReceber">R$ 0</p><p class="sum-note" id="sReceberN"></p></div>
-        <div class="sum"><span class="bar"></span><h3>Realizados</h3><p class="sum-val" id="sFeitos">0</p><p class="sum-note" id="sFaltas"></p></div>
-      </div>
-    </div>
+    <div class="timeline card" id="timeline" hidden></div>
   </section>
 
   <!-- PAINEL -->
@@ -163,7 +162,7 @@
   <footer class="foot"><span>Maisa Maria da Silva Alves — Fisioterapeuta</span></footer>
 </div>
 
-<button class="fab" id="btnNovo" type="button"><span aria-hidden="true">+</span> Agendar</button>
+<button class="fab" id="btnNovo" type="button" aria-label="Agendar atendimento"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="fab-l">Agendar</span></button>
 
 <nav class="tabbar" aria-label="Seções">
   <button type="button" class="tab on" data-view="agenda"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Agenda</button>
