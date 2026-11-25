@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@1,500&family=Poppins:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=16">
+<link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
 <div class="app">
@@ -280,6 +280,7 @@
       <div class="field"><label for="f-duracao">Duração (min)</label><input id="f-duracao" type="number" min="15" max="720" step="15" inputmode="numeric"></div>
       <div class="field"><label for="f-sessao">Sessão do pacote</label><input id="f-sessao" placeholder="ex.: 2/4"></div>
       <div class="field"><label for="f-valor">Valor (R$)</label><input id="f-valor" type="number" min="0" step="10" inputmode="decimal"></div>
+      <div class="field"><label for="f-pagamento">Pagamento</label><select id="f-pagamento"><option value="">Ainda não pago</option><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Incluso no pacote</option></select></div>
       <div class="field"><label for="f-status">Situação</label><select id="f-status"><option value="agendado">Agendado</option><option value="confirmado">Paciente confirmou</option><option value="realizado">Realizado</option><option value="faltou">Faltou</option><option value="cancelado">Cancelado</option></select></div>
       <div class="field full"><label for="f-obs">Observações</label><textarea id="f-obs" rows="2" placeholder="Semanas de gestação, queixas, lembretes…"></textarea></div>
     </div>
@@ -423,9 +424,9 @@
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js?v=16"></script>
-<script src="app.js?v=16"></script>
-<script src="sync.js?v=16"></script>
-<script src="push.js?v=16"></script>
+<script src="config.js?v=17"></script>
+<script src="app.js?v=17"></script>
+<script src="sync.js?v=17"></script>
+<script src="push.js?v=17"></script>
 </body>
 </html>

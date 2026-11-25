@@ -296,6 +296,7 @@ function apptHTML(a, { mostrarData = false } = {}) {
       <div class="actions">
         ${podeConfirmar ? `<button class="btn small confirm" type="button" data-act="confirmar" data-id="${a.id}">${ICON_CHECK}Confirmar atendimento</button>` : ""}
         ${a.status === "realizado" && valor(a) && !a.pagamento ? `<button class="btn small" type="button" data-act="confirmar" data-id="${a.id}">Registrar pagamento</button>` : ""}
+        ${podeConfirmar && valor(a) && !a.pagamento ? `<button class="btn small" type="button" data-act="pagar" data-id="${a.id}">Registrar pagamento</button>` : ""}
         ${wa ? `<a class="btn small" href="${wa}" target="_blank" rel="noopener">${ICON_WA}Lembrar pelo WhatsApp</a>` : ""}
         ${a.status === "realizado" ? `<button class="btn small" type="button" data-act="recibo" data-id="${a.id}">${ICON_WA}${a.reciboEm ? "Reenviar recibo" : "Enviar recibo"}</button>` : ""}
         <button class="btn small ghost" type="button" data-act="editar" data-id="${a.id}">Editar</button>
@@ -760,6 +761,7 @@ function openForm(a, pre = {}) {
   $("f-duracao").value = String(a?.duracao || 60);
   $("f-sessao").value = a?.sessao || "";
   $("f-status").value = a?.status || "agendado";
+  $("f-pagamento").value = a?.pagamento || "";
   $("f-obs").value = a?.obs || "";
   svcChanged(!a);
   if (a) $("f-valor").value = a.valor ?? "";
@@ -794,7 +796,7 @@ function salvarForm(ev) {
     servicoNome: SVC[$("f-servico").value]?.nome || $("f-servico").selectedOptions[0]?.textContent || "",
     data: $("f-data").value, hora: $("f-hora").value, duracao: Math.min(720, Math.max(15, +$("f-duracao").value || 60)),
     sessao: $("f-sessao").value.trim(), valor: v === "" ? 0 : Math.max(0, +v),
-    status: $("f-status").value, obs: $("f-obs").value.trim(), atualizadoEm: nowIso()
+    status: $("f-status").value, pagamento: $("f-pagamento").value, obs: $("f-obs").value.trim(), atualizadoEm: nowIso()
   };
   const editando = !!state.editing;
   if (editando) {
@@ -947,6 +949,7 @@ document.addEventListener("click", e => {
     case "editar": if (a) openForm(a); break;
     case "confirmar": if (a) openConfirmar(a); break;
     case "recibo": if (a) openRecibo(a); break;
+    case "pagar": if (a) { openForm(a); setTimeout(() => { $("f-pagamento").focus(); $("f-pagamento").scrollIntoView({ block: "center" }); }, 120); } break;
     case "limpar-ex":
       state.items = state.items.filter(x => !x.exemplo); store.save(); render(); toast("Exemplos removidos"); break;
   }
