@@ -517,3 +517,7 @@ body.travado { overflow: hidden; }
 #bloquearLi .menu-i { flex-wrap: wrap; }
 .menu-ctrl { flex-basis: 100%; display: flex; align-items: center; gap: 8px; padding-left: 50px; }
 .menu-ctrl .sel-small { max-width: none; flex: 1; }
+
+/* Documentos */
+a.menu-link { text-decoration: none; color: inherit; cursor: pointer; border-radius: var(--r-md); }
+a.menu-link:hover { background: var(--surface-2); }
