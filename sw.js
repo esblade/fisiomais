@@ -1,7 +1,7 @@
 // Guarda os arquivos do app para abrir mesmo sem internet.
 // Ao mudar qualquer arquivo do app, aumente a versão abaixo
 // e o "?v=" de styles.css e app.js no index.html.
-const VERSION = "fisiomais-v17";
+const VERSION = "fisiomais-v18";
 const SHELL = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const SHELL = [
   "./config.js",
   "./sync.js",
   "./push.js",
+  "./docs/ficha-presenca.pdf",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",

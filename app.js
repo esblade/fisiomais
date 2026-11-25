@@ -170,6 +170,7 @@ function renderBadge() {
 }
 
 const ICON_CHECK = `<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`;
+const ICON_FICHA = `<svg viewBox="0 0 24 24"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h4"/></svg>`;
 const ICON_WA = `<svg viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/></svg>`;
 
 function waLink(a, tipo) {
@@ -298,6 +299,7 @@ function apptHTML(a, { mostrarData = false } = {}) {
         ${a.status === "realizado" && valor(a) && !a.pagamento ? `<button class="btn small" type="button" data-act="confirmar" data-id="${a.id}">Registrar pagamento</button>` : ""}
         ${podeConfirmar && valor(a) && !a.pagamento ? `<button class="btn small" type="button" data-act="pagar" data-id="${a.id}">Registrar pagamento</button>` : ""}
         ${wa ? `<a class="btn small" href="${wa}" target="_blank" rel="noopener">${ICON_WA}Lembrar pelo WhatsApp</a>` : ""}
+        ${!waNumero(a.telefone) && a.status !== "cancelado" ? `<a class="btn small" href="docs/ficha-presenca.pdf" target="_blank" rel="noopener">${ICON_FICHA}Ficha de presença</a>` : ""}
         ${a.status === "realizado" ? `<button class="btn small" type="button" data-act="recibo" data-id="${a.id}">${ICON_WA}${a.reciboEm ? "Reenviar recibo" : "Enviar recibo"}</button>` : ""}
         <button class="btn small ghost" type="button" data-act="editar" data-id="${a.id}">Editar</button>
       </div>
